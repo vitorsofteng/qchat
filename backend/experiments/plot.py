@@ -114,7 +114,7 @@ def plot_exp2() -> None:
     axis.set_ylabel("QBER médio (%)")
     axis.set_xlabel("Modo de adversário (Eve)")
     axis.set_ylim(0, max(35, max(means) + max(stds) + 5))
-    for rect, mean in zip(bars, means):
+    for rect, mean in zip(bars, means, strict=True):
         axis.annotate(
             f"{mean:.1f}",
             xy=(rect.get_x() + rect.get_width() / 2, rect.get_height()),
@@ -161,7 +161,7 @@ def plot_exp4() -> None:
     axis.set_ylabel("Entropia de Shannon da chave (bits/byte)")
     axis.set_xlabel("Cenário de comprometimento")
     axis.set_ylim(0, 5.4)
-    for rect, mean in zip(bars, means):
+    for rect, mean in zip(bars, means, strict=True):
         axis.annotate(
             f"{mean:.2f}",
             xy=(rect.get_x() + rect.get_width() / 2, rect.get_height()),
