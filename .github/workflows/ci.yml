@@ -40,7 +40,6 @@ jobs:
   frontend:
     name: Frontend — lint + build
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('frontend/package.json') != '' }}
     defaults:
       run:
         working-directory: frontend
