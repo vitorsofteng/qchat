@@ -1,0 +1,50 @@
+<app-toolbar />
+
+<div class="settings-page">
+  <mat-card appearance="outlined" class="card">
+    <mat-card-header>
+      <mat-card-title>Parâmetros do sistema</mat-card-title>
+      <mat-card-subtitle>Somente leitura</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (config(); as cfg) {
+        <div class="param">
+          <span class="param-label">Qubits do BB84</span>
+          <span class="param-value">{{ cfg.bb84_qubits }}</span>
+        </div>
+        <div class="param">
+          <span class="param-label">Limiar de QBER</span>
+          <span class="param-value">{{ (cfg.qber_threshold * 100).toFixed(1) }}%</span>
+        </div>
+        <div class="param">
+          <span class="param-label">Passes do Cascade</span>
+          <span class="param-value">{{ cfg.cascade_passes }}</span>
+        </div>
+        <div class="param">
+          <span class="param-label">Nível ML-KEM</span>
+          <span class="param-value">{{ cfg.mlkem_level }}</span>
+        </div>
+        <div class="param">
+          <span class="param-label">Timeout de sessão</span>
+          <span class="param-value">{{ cfg.session_timeout_minutes }} min</span>
+        </div>
+      } @else {
+        <p class="empty">Carregando parâmetros…</p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="card">
+    <mat-card-header>
+      <mat-card-title>Modos de estabelecimento de chave</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @for (mode of protocolModes; track mode.value) {
+        <div class="mode">
+          <span class="mode-label">{{ mode.label }}</span>
+          <span class="mode-description">{{ mode.description }}</span>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

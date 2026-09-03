@@ -1,0 +1,53 @@
+.lobby-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.card mat-card-header {
+  align-items: center;
+}
+
+.header-action {
+  margin-left: auto;
+}
+
+.mode-field {
+  width: 100%;
+}
+
+.mode-description {
+  margin: 0.25rem 0 0;
+  opacity: 0.75;
+  font-size: 0.9rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row-name {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.row-name small {
+  opacity: 0.65;
+}
+
+.empty {
+  opacity: 0.7;
+  margin: 0;
+}

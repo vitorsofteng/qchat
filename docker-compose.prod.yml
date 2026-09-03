@@ -1,0 +1,72 @@
+# QChat — orquestracao de producao (F18.3).
+#
+# Apenas o nginx publica portas. Backend, frontend e banco ficam em redes
+# internas isoladas — o banco nao e alcancavel a partir da borda.
+#
+# Variaveis obrigatorias (defina num arquivo .env ao lado deste):
+#   JWT_SECRET         segredo forte para assinar os tokens
+#   POSTGRES_PASSWORD  senha do banco
+#   PUBLIC_URL         URL publica da aplicacao (ex.: https://qchat.exemplo)
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: qchat
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qchat}
+      POSTGRES_DB: qchat
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qchat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://qchat:${POSTGRES_PASSWORD:-qchat}@db:5432/qchat
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no arquivo .env}
+      ENVIRONMENT: production
+      CORS_ORIGINS: ${PUBLIC_URL:-http://localhost}
+    networks:
+      - data
+      - web
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    networks:
+      - web
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      # - "443:443"   # habilite apos configurar TLS no nginx.conf
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # - ./nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - web
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+
+networks:
+  web:
+  data:
+
+volumes:
+  pgdata:

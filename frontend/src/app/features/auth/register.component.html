@@ -1,0 +1,50 @@
+<div class="auth-page">
+  <mat-card class="auth-card" appearance="outlined">
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    <mat-card-header>
+      <mat-card-title>Criar conta</mat-card-title>
+      <mat-card-subtitle>QChat — mensageria híbrida QKD + PQC</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <mat-form-field appearance="outline">
+          <mat-label>Usuário</mat-label>
+          <input matInput formControlName="username" autocomplete="username" />
+          <mat-hint>3 a 32 caracteres alfanuméricos</mat-hint>
+          @if (form.controls.username.invalid && form.controls.username.touched) {
+            <mat-error>Use apenas letras e números (3 a 32 caracteres)</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Senha</mat-label>
+          <input
+            matInput
+            type="password"
+            formControlName="password"
+            autocomplete="new-password"
+          />
+          <mat-hint>Mínimo de 8 caracteres</mat-hint>
+          @if (form.controls.password.invalid && form.controls.password.touched) {
+            <mat-error>A senha deve ter entre 8 e 72 caracteres</mat-error>
+          }
+        </mat-form-field>
+
+        @if (error()) {
+          <p class="error-message">{{ error() }}</p>
+        }
+
+        <button mat-flat-button color="primary" type="submit" [disabled]="loading()">
+          Cadastrar
+        </button>
+      </form>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <a routerLink="/login">Já tem conta? Entrar</a>
+    </mat-card-actions>
+  </mat-card>
+</div>

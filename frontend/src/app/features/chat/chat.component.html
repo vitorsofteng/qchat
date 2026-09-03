@@ -1,0 +1,76 @@
+<app-toolbar />
+
+<div class="chat-page">
+  <div class="chat-header">
+    <div class="metrics">
+      <span class="chip chip-mode">{{ modeLabel() }}</span>
+      <span class="chip chip-qber">QBER: {{ qberDisplay() }}</span>
+      <span class="chip status-{{ connectionStatus() }}">
+        {{
+          connectionStatus() === 'connected'
+            ? 'Conectado'
+            : connectionStatus() === 'connecting'
+              ? 'Conectando…'
+              : 'Desconectado'
+        }}
+      </span>
+    </div>
+    <button mat-stroked-button (click)="closeSession()" [disabled]="sessionClosed()">
+      Encerrar sessão
+    </button>
+  </div>
+
+  @if (!ready() && !sessionClosed()) {
+    <div class="establishing">
+      <mat-spinner diameter="36" />
+      <p>Estabelecendo chave segura ({{ modeLabel() }})…</p>
+    </div>
+  }
+
+  <div class="messages" #messageList>
+    @for (message of messages(); track $index) {
+      <div class="message" [class.outgoing]="message.outgoing">
+        <div class="bubble">{{ message.text }}</div>
+        <span class="time">{{ message.timestamp | date: 'shortTime' }}</span>
+      </div>
+    } @empty {
+      @if (ready()) {
+        <p class="hint">Sessão segura estabelecida. Envie a primeira mensagem.</p>
+      }
+    }
+    @if (peerTyping()) {
+      <div class="message">
+        <div class="bubble typing">digitando…</div>
+      </div>
+    }
+  </div>
+
+  @if (sessionClosed()) {
+    <div class="closed-banner">
+      Sessão encerrada. As mensagens são efêmeras e foram descartadas.
+    </div>
+  }
+
+  <div class="composer">
+    <mat-form-field appearance="outline" class="composer-field" subscriptSizing="dynamic">
+      <input
+        matInput
+        #messageInput
+        placeholder="Digite uma mensagem"
+        autocomplete="off"
+        [disabled]="!ready() || sessionClosed()"
+        (input)="onTyping()"
+        (keyup.enter)="send(messageInput)"
+      />
+    </mat-form-field>
+    <button
+      mat-fab
+      color="primary"
+      aria-label="Enviar"
+      [disabled]="!ready() || sessionClosed()"
+      (click)="send(messageInput)"
+    >
+      <mat-icon>send</mat-icon>
+    </button>
+  </div>
+</div>

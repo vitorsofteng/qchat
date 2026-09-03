@@ -1,0 +1,66 @@
+<app-toolbar />
+
+<div class="lobby-page">
+  <mat-card appearance="outlined" class="card">
+    <mat-card-header>
+      <mat-card-title>Nova sessão</mat-card-title>
+      <mat-card-subtitle>Escolha o modo de estabelecimento de chave</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="mode-field">
+        <mat-label>Modo criptográfico</mat-label>
+        <mat-select [value]="selectedMode()" (valueChange)="selectedMode.set($event)">
+          @for (mode of protocolModes; track mode.value) {
+            <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <p class="mode-description">{{ modeDescription() }}</p>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="card">
+    <mat-card-header>
+      <mat-card-title>Usuários online</mat-card-title>
+      <button mat-icon-button class="header-action" (click)="refreshUsers()" aria-label="Atualizar">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </mat-card-header>
+    <mat-card-content>
+      @if (onlineUsers().length === 0) {
+        <p class="empty">Nenhum outro usuário online no momento.</p>
+      } @else {
+        @for (user of onlineUsers(); track user.id) {
+          <div class="row">
+            <mat-icon>person</mat-icon>
+            <span class="row-name">{{ user.username }}</span>
+            <button mat-stroked-button (click)="startSession(user)">Conversar</button>
+          </div>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+
+  @if (pendingRequests().length > 0) {
+    <mat-card appearance="outlined" class="card">
+      <mat-card-header>
+        <mat-card-title>Solicitações recebidas</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @for (request of pendingRequests(); track request.sessionId) {
+          <div class="row">
+            <mat-icon>mark_email_unread</mat-icon>
+            <span class="row-name">
+              {{ request.from }}
+              <small>modo {{ request.mode }}</small>
+            </span>
+            <button mat-flat-button color="primary" (click)="acceptRequest(request)">
+              Aceitar
+            </button>
+            <button mat-button (click)="rejectRequest(request)">Recusar</button>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>
