@@ -30,11 +30,14 @@ dependencies = [
 [project.optional-dependencies]
 # Extras isolados: instalacao pesada e sensivel a plataforma.
 # Criptografia pos-quantica (ML-KEM) — modos ML-KEM e Hibrido.
-pqc = ["liboqs-python==0.15.0"]
+# Nao fixamos a versao exata: a 0.15.0, usada na execucao dos experimentos
+# relatados no trabalho, foi retirada do PyPI e nao e mais instalavel. O
+# intervalo abaixo mantem a serie compativel e permite reinstalar o ambiente.
+pqc = ["liboqs-python>=0.15,<1.0"]
 # Simulacao do canal quantico (BB84) — modos BB84 e Hibrido.
 qkd = ["qiskit==1.1.1", "qiskit-aer==0.14.2"]
 # Conveniencia: todos os extras quanticos de uma vez.
-quantum = ["liboqs-python==0.15.0", "qiskit==1.1.1", "qiskit-aer==0.14.2"]
+quantum = ["liboqs-python>=0.15,<1.0", "qiskit==1.1.1", "qiskit-aer==0.14.2"]
 # Analise dos experimentos (F17): graficos e estatistica.
 experiments = ["matplotlib==3.9.2", "scipy==1.14.1"]
 dev = [
