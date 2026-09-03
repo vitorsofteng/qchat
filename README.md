@@ -1,7 +1,6 @@
 # QChat — Sistema de Mensageria Híbrida Resistente a Computadores Quânticos
 
-<!-- Ajuste USUARIO/qchat após publicar o repositório no GitHub. -->
-![CI](https://github.com/USUARIO/qchat/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/vitorsofteng/qchat/actions/workflows/ci.yml/badge.svg)](https://github.com/vitorsofteng/qchat/actions/workflows/ci.yml)
 ![Cobertura](https://img.shields.io/badge/cobertura%20cripto-%E2%89%A585%25-brightgreen)
 ![Licença](https://img.shields.io/badge/licença-MIT-blue)
 
