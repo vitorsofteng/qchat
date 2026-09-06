@@ -1,9 +1,6 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -28,15 +25,7 @@ interface PendingRequest {
 /** Tela de lobby — usuarios online e solicitacoes de sessao (F14.3). */
 @Component({
   selector: 'app-lobby',
-  imports: [
-    ToolbarComponent,
-    AdversaryControlComponent,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatSelectModule,
-  ],
+  imports: [ToolbarComponent, AdversaryControlComponent, MatButtonModule, MatIconModule],
   templateUrl: './lobby.component.html',
   styleUrl: './lobby.component.scss',
 })
@@ -81,9 +70,11 @@ export class LobbyComponent implements OnInit, OnDestroy {
     });
   }
 
-  modeDescription(): string {
-    return this.protocolModes.find((option) => option.value === this.selectedMode())?.description ?? '';
-  }
+  readonly selectedModeShort = computed(
+    () =>
+      this.protocolModes.find((option) => option.value === this.selectedMode())?.short ??
+      this.selectedMode(),
+  );
 
   startSession(user: UserProfile): void {
     this.sessions.request(user.username, this.selectedMode()).subscribe({

@@ -1,8 +1,8 @@
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
+// Tema Material 3 do QChat.
+//
+// A paleta e' ciano (o canal optico) com violeta de apoio. O vermelho fica
+// reservado a deteccao de espionagem, de modo que a cor de alarme apareca em
+// um unico lugar da interface e signifique sempre a mesma coisa.
 @use '@angular/material' as mat;
 
 html {
@@ -10,30 +10,109 @@ html {
   @include mat.theme(
     (
       color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
+        primary: mat.$cyan-palette,
+        tertiary: mat.$violet-palette,
       ),
-      typography: Roboto,
+      typography: (
+        plain-family: (
+          'IBM Plex Sans',
+          system-ui,
+          sans-serif,
+        ),
+        brand-family: (
+          'IBM Plex Sans',
+          system-ui,
+          sans-serif,
+        ),
+      ),
       density: 0,
     )
   );
 }
 
 body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
-  color-scheme: light;
+  // Acompanha o tema do sistema; ambos os modos sao desenhados.
+  color-scheme: light dark;
 
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
 
-  // Reset the user agent margin.
   margin: 0;
   height: 100%;
 }
-/* You can add global styles to this file, and also import other style files */
+
+/* ---------------------------------------------------------------------------
+   Tokens proprios da camada criptografica.
+
+   O Material cobre superficies e texto; estes cobrem o vocabulario do dominio:
+   integro / alerta / comprometido, a familia monoespacada dos valores
+   criptograficos e as superficies do painel de evidencias.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --qc-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --qc-safe: #0f7b52;
+  --qc-safe-soft: #e2f3ea;
+  --qc-warn: #8a6109;
+  --qc-warn-soft: #fbf1da;
+  --qc-danger: #b3261e;
+  --qc-danger-soft: #fbeae8;
+
+  --qc-panel: #f4f7f8;
+  --qc-panel-raised: #ffffff;
+  --qc-line: #dde5e7;
+  --qc-line-strong: #c3d0d3;
+  --qc-track: #e4ebed;
+
+  --qc-radius: 0.85rem;
+  --qc-radius-sm: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --qc-safe: #6ecf9f;
+    --qc-safe-soft: #102b1f;
+    --qc-warn: #e0b352;
+    --qc-warn-soft: #2d2410;
+    --qc-danger: #f28b7a;
+    --qc-danger-soft: #37160f;
+
+    --qc-panel: #10171a;
+    --qc-panel-raised: #161f22;
+    --qc-line: #263235;
+    --qc-line-strong: #384a4e;
+    --qc-track: #1e292c;
+  }
+}
+
+/* Utilitarios usados pelos componentes de evidencia. */
+
+.qc-mono {
+  font-family: var(--qc-mono);
+  font-variant-ligatures: none;
+}
+
+.qc-eyebrow {
+  font-family: var(--qc-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

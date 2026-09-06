@@ -3,16 +3,15 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.85rem 1rem;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 0.75rem;
-  background: var(--mat-sys-surface-container-low);
+  border: 1px solid var(--qc-line);
+  border-radius: var(--qc-radius);
+  background: var(--qc-panel);
 }
 
 /* Quando o espiao esta ativo o cartao inteiro muda de tom. */
 .adversary.armed {
-  border-color: var(--mat-sys-error);
-  background: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
+  border-color: var(--qc-danger);
+  background: var(--qc-danger-soft);
 }
 
 .adversary-head {
@@ -27,7 +26,7 @@
 }
 
 .armed .head-icon {
-  color: var(--mat-sys-error);
+  color: var(--qc-danger);
   opacity: 1;
 }
 
@@ -64,8 +63,8 @@
   font: inherit;
   font-size: 0.78rem;
   color: inherit;
-  background: var(--mat-sys-surface);
-  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--qc-panel-raised);
+  border: 1px solid var(--qc-line);
   border-radius: 1rem;
   cursor: pointer;
   transition:
@@ -74,7 +73,7 @@
 }
 
 .option:hover:not(:disabled) {
-  border-color: var(--mat-sys-outline);
+  border-color: var(--qc-line-strong);
 }
 
 .option:disabled {
@@ -90,9 +89,9 @@
 }
 
 .armed .option.selected {
-  background: var(--mat-sys-error);
-  border-color: var(--mat-sys-error);
-  color: var(--mat-sys-on-error);
+  background: var(--qc-danger);
+  border-color: var(--qc-danger);
+  color: var(--qc-panel-raised);
 }
 
 .option:focus-visible {
