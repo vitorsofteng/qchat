@@ -16,6 +16,7 @@ import { CryptoMetricsService } from '../../core/services/crypto-metrics.service
 import { SessionService } from '../../core/services/session.service';
 import { UserService } from '../../core/services/user.service';
 import { WebSocketService } from '../../core/services/websocket.service';
+import { AdversaryControlComponent } from '../../shared/adversary-control/adversary-control.component';
 import { ToolbarComponent } from '../../shared/toolbar/toolbar.component';
 
 interface PendingRequest {
@@ -29,6 +30,7 @@ interface PendingRequest {
   selector: 'app-lobby',
   imports: [
     ToolbarComponent,
+    AdversaryControlComponent,
     MatCardModule,
     MatButtonModule,
     MatIconModule,

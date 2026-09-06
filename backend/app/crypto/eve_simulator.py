@@ -68,16 +68,50 @@ class EveSimulator:
             self.intercepted_count += 1
 
 
+# Modo escolhido em tempo de execucao pela demonstracao; None = usa `EVE_MODE`.
+# Estado de processo, deliberadamente nao persistido: reiniciar o backend
+# devolve o adversario a configuracao do ambiente.
+_runtime_mode: EveMode | None = None
+
+
+def adversary_locked() -> bool:
+    """Em producao o adversario e' inalteravel e permanece PASSIVE (F11.4)."""
+    return get_settings().is_production
+
+
+def current_adversary_mode() -> EveMode:
+    """Modo em vigor: o override de execucao, ou o configurado no ambiente."""
+    if adversary_locked():
+        return EveMode.PASSIVE
+    if _runtime_mode is not None:
+        return _runtime_mode
+    return EveMode(get_settings().eve_mode)
+
+
+def set_adversary_mode(mode: EveMode | str) -> EveMode:
+    """Troca o adversario simulado. Recusa a mudanca em producao (F11.4)."""
+    if adversary_locked():
+        raise PermissionError("O adversario simulado nao pode ser ativado em producao")
+    global _runtime_mode
+    _runtime_mode = EveMode(mode)
+    return _runtime_mode
+
+
+def reset_adversary_mode() -> None:
+    """Descarta o override e volta ao valor de `EVE_MODE` (usado nos testes)."""
+    global _runtime_mode
+    _runtime_mode = None
+
+
 def configured_eve() -> EveSimulator:
     """Cria a Eve conforme a configuracao do ambiente.
 
     Eve so e ativada por configuracao e nunca em producao (F11.4): em ambiente
     de producao retorna sempre o modo PASSIVE, independente de `EVE_MODE`.
     """
-    settings = get_settings()
-    if settings.is_production:
+    if adversary_locked():
         return EveSimulator(EveMode.PASSIVE)
     return EveSimulator(
-        EveMode(settings.eve_mode),
-        beam_split_fraction=settings.eve_beam_split_fraction,
+        current_adversary_mode(),
+        beam_split_fraction=get_settings().eve_beam_split_fraction,
     )

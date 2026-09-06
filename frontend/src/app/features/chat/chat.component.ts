@@ -24,15 +24,43 @@ import { ChatMessage } from '../../core/models/chat-message';
 import { PROTOCOL_MODES } from '../../core/models/protocol-mode';
 import { SessionView } from '../../core/models/session';
 import { EncryptedEnvelope, WSMessage } from '../../core/models/ws-message';
+import { AdversaryService } from '../../core/services/adversary.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ConfigService } from '../../core/services/config.service';
+import { CryptoMetricsService } from '../../core/services/crypto-metrics.service';
 import { MessageCryptoService } from '../../core/services/message-crypto.service';
 import { SessionService } from '../../core/services/session.service';
 import { WebSocketService } from '../../core/services/websocket.service';
+import { AdversaryControlComponent } from '../../shared/adversary-control/adversary-control.component';
 import { QberAlertDialogComponent } from '../../shared/qber-alert-dialog/qber-alert-dialog.component';
 import { ToolbarComponent } from '../../shared/toolbar/toolbar.component';
 
 const TYPING_THROTTLE_MS = 1500;
 const TYPING_CLEAR_MS = 3000;
+
+/** Escala fixa do medidor de QBER, em fracao (0 a 30%). */
+const QBER_SCALE_MAX = 0.3;
+
+/** Uma linha do painel de evidencias: rotulo, valor e nota explicativa. */
+export interface EvidenceRow {
+  label: string;
+  value: string;
+  note?: string;
+}
+
+/** Situacao de um componente do modo hibrido. */
+export interface ComponentStatus {
+  name: string;
+  ok: boolean;
+  error: string | null;
+}
+
+/** Ultimo envelope que passou pelo canal, com a direcao em que trafegou. */
+export interface WireRecord {
+  envelope: EncryptedEnvelope;
+  outgoing: boolean;
+  plaintext: string;
+}
 
 /** Tela de chat — mensagens cifradas, métricas de QBER e status (F14.4 - F14.6). */
 @Component({
@@ -40,6 +68,7 @@ const TYPING_CLEAR_MS = 3000;
   imports: [
     DatePipe,
     ToolbarComponent,
+    AdversaryControlComponent,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
@@ -56,6 +85,9 @@ export class ChatComponent implements OnInit, OnDestroy {
   private readonly ws = inject(WebSocketService);
   private readonly sessions = inject(SessionService);
   private readonly messageCrypto = inject(MessageCryptoService);
+  private readonly cryptoMetrics = inject(CryptoMetricsService);
+  private readonly adversary = inject(AdversaryService);
+  private readonly config = inject(ConfigService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
 
@@ -67,6 +99,14 @@ export class ChatComponent implements OnInit, OnDestroy {
   readonly qber = signal<number | null>(null);
   readonly connectionStatus = this.ws.status;
 
+  // --- painel de evidencias (F15.4) ---
+  readonly evidenceOpen = signal(true);
+  readonly sessionKey = signal<string | null>(null);
+  readonly keyFingerprint = signal<string | null>(null);
+  readonly metrics = signal<Record<string, unknown> | null>(null);
+  readonly wire = signal<WireRecord | null>(null);
+  readonly qberThreshold = signal<number | null>(null);
+
   readonly modeLabel = computed(() => {
     const mode = this.session()?.mode;
     return PROTOCOL_MODES.find((option) => option.value === mode)?.label ?? mode ?? '—';
@@ -74,6 +114,98 @@ export class ChatComponent implements OnInit, OnDestroy {
   readonly qberDisplay = computed(() => {
     const value = this.qber();
     return value === null ? 'N/A' : `${(value * 100).toFixed(1)}%`;
+  });
+
+  readonly modeDescription = computed(() => {
+    const mode = this.session()?.mode;
+    return PROTOCOL_MODES.find((option) => option.value === mode)?.description ?? '';
+  });
+
+  /** Metricas do estabelecimento de chave, comuns e especificas de cada modo. */
+  readonly protocolRows = computed<EvidenceRow[]>(() => {
+    const metrics = this.metrics();
+    if (!metrics) {
+      return [];
+    }
+    const rows: EvidenceRow[] = [];
+    const push = (label: string, value: unknown, note?: string): void => {
+      if (value !== undefined && value !== null && value !== '') {
+        rows.push({ label, value: String(value), note });
+      }
+    };
+
+    push('Tempo de estabelecimento', this.formatMs(metrics['elapsed_ms']));
+    const bytes = metrics['bytes_exchanged'];
+    if (typeof bytes === 'number' && bytes > 0) {
+      push('Bytes trocados no canal', bytes.toLocaleString('pt-BR'));
+    }
+    push('Tamanho da chave derivada', this.formatBits(metrics['key_size_bits']));
+
+    switch (this.session()?.mode) {
+      case 'RSA':
+        push('Par de chaves RSA', this.formatBits(metrics['rsa_key_bits']), 'controle experimental');
+        break;
+      case 'MLKEM':
+        push('Nível ML-KEM', metrics['mlkem_level'], 'NIST FIPS 203');
+        break;
+      case 'BB84':
+        push('Qubits transmitidos', this.formatCount(metrics['n_qubits']));
+        push('Bits após o sifting', this.formatCount(metrics['sifted_length']), 'bases coincidentes');
+        push('Bits após a reconciliação', this.formatCount(metrics['reconciled_length']), 'Cascade');
+        push('Bits após a amplificação', this.formatCount(metrics['amplified_length']));
+        push('Bits de paridade vazados', this.formatCount(metrics['parity_bits_leaked']));
+        break;
+      case 'HYBRID':
+        push('Componentes íntegros', this.formatSurvivors(metrics['survivors']));
+        break;
+    }
+    return rows;
+  });
+
+  /** Situacao de cada componente do modo hibrido. */
+  readonly hybridComponents = computed<ComponentStatus[]>(() => {
+    const components = this.metrics()?.['components'];
+    if (!components || typeof components !== 'object') {
+      return [];
+    }
+    return Object.entries(components as Record<string, Record<string, unknown>>).map(
+      ([name, detail]) => ({
+        name: name === 'bb84' ? 'BB84 (quântico)' : 'ML-KEM (pós-quântico)',
+        ok: detail?.['ok'] === true,
+        error: (detail?.['error'] as string | null) ?? null,
+      }),
+    );
+  });
+
+  /** Largura da barra de QBER, em porcentagem da escala do medidor. */
+  readonly qberBarWidth = computed(() => {
+    const value = this.qber();
+    return value === null ? 0 : Math.min(100, (value / QBER_SCALE_MAX) * 100);
+  });
+
+  /** Posicao do marcador de limiar, em porcentagem da escala do medidor. */
+  readonly qberMarkerLeft = computed(() => {
+    const threshold = this.qberThreshold();
+    return threshold === null ? 50 : Math.min(100, (threshold / QBER_SCALE_MAX) * 100);
+  });
+
+  readonly qberExceeded = computed(() => {
+    const value = this.qber();
+    const threshold = this.qberThreshold();
+    return value !== null && threshold !== null && value > threshold;
+  });
+
+  readonly thresholdDisplay = computed(() => {
+    const threshold = this.qberThreshold();
+    return threshold === null ? '—' : `${(threshold * 100).toFixed(1)}%`;
+  });
+
+  readonly scaleMaxDisplay = `${(QBER_SCALE_MAX * 100).toFixed(0)}%`;
+
+  /** O modo em uso mede QBER? (RSA e ML-KEM nao medem.) */
+  readonly hasQber = computed(() => {
+    const mode = this.session()?.mode;
+    return PROTOCOL_MODES.find((option) => option.value === mode)?.hasQber ?? false;
   });
 
   private readonly messageList = viewChild<ElementRef<HTMLDivElement>>('messageList');
@@ -101,6 +233,17 @@ export class ChatComponent implements OnInit, OnDestroy {
     const token = this.auth.token;
     if (token) {
       this.ws.connect(token);
+    }
+
+    this.config.get().subscribe({
+      next: (config) => this.qberThreshold.set(config.qber_threshold),
+    });
+
+    // O evento key_established pode ter chegado ainda no lobby, antes desta
+    // tela existir; o CryptoMetricsService o mantem em cache.
+    const cached = this.cryptoMetrics.getEstablished(this.sessionId);
+    if (cached) {
+      this.metrics.set(cached.metrics);
     }
 
     this.sessions.get(this.sessionId).subscribe({
@@ -154,6 +297,7 @@ export class ChatComponent implements OnInit, OnDestroy {
       session_id: this.sessionId,
       payload: envelope as unknown as Record<string, unknown>,
     });
+    this.wire.set({ envelope, outgoing: true, plaintext: text });
     this.appendMessage({ text, outgoing: true, timestamp });
     input.value = '';
   }
@@ -175,10 +319,37 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   private async applyKey(keyBase64: string, qber: number | null): Promise<void> {
     this.cryptoKey = await this.messageCrypto.importKey(keyBase64);
+    this.adversary.refresh();
+    this.sessionKey.set(keyBase64);
+    this.keyFingerprint.set(await this.messageCrypto.fingerprint(keyBase64));
     this.ready.set(true);
     if (qber !== null) {
       this.qber.set(qber);
     }
+  }
+
+  toggleEvidence(): void {
+    this.evidenceOpen.update((open) => !open);
+  }
+
+  private formatMs(value: unknown): string | null {
+    return typeof value === 'number' ? `${value.toLocaleString('pt-BR')} ms` : null;
+  }
+
+  private formatBits(value: unknown): string | null {
+    return typeof value === 'number' ? `${value.toLocaleString('pt-BR')} bits` : null;
+  }
+
+  private formatCount(value: unknown): string | null {
+    return typeof value === 'number' ? value.toLocaleString('pt-BR') : null;
+  }
+
+  private formatSurvivors(value: unknown): string | null {
+    if (!Array.isArray(value)) {
+      return null;
+    }
+    const labels: Record<string, string> = { bb84: 'BB84', mlkem: 'ML-KEM' };
+    return value.map((item) => labels[String(item)] ?? String(item)).join(' + ');
   }
 
   private handle(message: WSMessage): void {
@@ -188,6 +359,9 @@ export class ChatComponent implements OnInit, OnDestroy {
     switch (message.type) {
       case 'key_established': {
         const metrics = message.payload['metrics'] as Record<string, unknown> | undefined;
+        if (metrics) {
+          this.metrics.set(metrics);
+        }
         void this.applyKey(
           message.payload['key'] as string,
           (metrics?.['qber'] as number | null) ?? null,
@@ -220,6 +394,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     }
     try {
       const text = await this.messageCrypto.decrypt(this.cryptoKey, envelope, this.sessionId);
+      this.wire.set({ envelope, outgoing: false, plaintext: text });
       this.appendMessage({ text, outgoing: false, timestamp: envelope.timestamp });
     } catch {
       this.notify('Uma mensagem recebida não pôde ser decifrada.');

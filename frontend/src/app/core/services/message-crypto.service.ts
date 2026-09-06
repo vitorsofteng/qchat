@@ -49,6 +49,20 @@ export class MessageCryptoService {
     };
   }
 
+  /** Impressao digital da chave: SHA-256 truncado, em grupos de 4 hex.
+   *
+   * Serve de evidencia visual do acordo de chaves — as duas pontas exibem o
+   * mesmo valor sem que a chave em si precise ser comparada a olho.
+   */
+  async fingerprint(keyBase64: string): Promise<string> {
+    const digest = await crypto.subtle.digest('SHA-256', this.fromBase64(keyBase64));
+    const hex = Array.from(new Uint8Array(digest).slice(0, 8))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('')
+      .toUpperCase();
+    return (hex.match(/.{4}/g) ?? []).join(' ');
+  }
+
   async decrypt(key: CryptoKey, envelope: EncryptedEnvelope, sessionId: string): Promise<string> {
     const aad = this.encoder.encode(
       `${sessionId}|${envelope.sequence_number}|${envelope.timestamp}`,
