@@ -8,6 +8,26 @@
   box-sizing: border-box;
 }
 
+/* Com o painel aberto a pagina alarga e abre uma coluna lateral. */
+.chat-page.with-evidence {
+  max-width: 1280px;
+}
+
+.chat-layout {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.chat-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
 .chat-header {
   display: flex;
   align-items: center;
@@ -127,4 +147,289 @@
 
 .composer-field {
   flex: 1 1 auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Painel de evidencias (F15.4) — expoe chave, metricas do protocolo, QBER e o
+   envelope cifrado que trafega no canal, sem exigir ferramentas do navegador.
+   --------------------------------------------------------------------------- */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.evidence {
+  flex: 0 0 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  min-height: 0;
+}
+
+.ev-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-low);
+  min-width: 0;
+}
+
+.ev-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.ev-caption {
+  margin: 0;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+.ev-empty {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.fingerprint {
+  margin: 0.25rem 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--mat-sys-primary);
+  word-break: break-word;
+}
+
+.ev-pairs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0;
+}
+
+.ev-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 0.8rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.ev-pair:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.ev-pair dt {
+  opacity: 0.7;
+  min-width: 0;
+}
+
+.ev-pair dd {
+  margin: 0;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+
+.ev-note {
+  display: block;
+  font-weight: 400;
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.mono {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.75rem;
+}
+
+.wrap-any {
+  word-break: break-all;
+}
+
+.plaintext {
+  font-style: italic;
+}
+
+.ev-footnote {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  opacity: 0.65;
+  line-height: 1.4;
+}
+
+/* --- componentes do modo hibrido --- */
+
+.components {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.component {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.component mat-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  color: #2e7d32;
+}
+
+.component.failed mat-icon {
+  color: var(--mat-sys-error);
+}
+
+.component div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.component span {
+  opacity: 0.7;
+  word-break: break-word;
+}
+
+/* --- medidor de QBER --- */
+
+.qber-value {
+  margin: 0.1rem 0 0.35rem;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #2e7d32;
+}
+
+.qber-value.exceeded {
+  color: var(--mat-sys-error);
+}
+
+.gauge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.gauge-track {
+  position: relative;
+  height: 0.85rem;
+  border-radius: 0.2rem;
+  background: var(--mat-sys-surface-container-highest);
+  border: 1px solid var(--mat-sys-outline-variant);
+}
+
+.gauge-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 0.15rem 0 0 0.15rem;
+  background: #2e7d32;
+  transition: width 0.3s ease;
+}
+
+.gauge-fill.exceeded {
+  background: var(--mat-sys-error);
+}
+
+.gauge-marker {
+  position: absolute;
+  top: -0.2rem;
+  bottom: -0.2rem;
+  width: 2px;
+  background: var(--mat-sys-on-surface);
+}
+
+.gauge-axis {
+  position: relative;
+  height: 0.95rem;
+  font-size: 0.65rem;
+  opacity: 0.65;
+}
+
+.gauge-axis span:first-child {
+  position: absolute;
+  left: 0;
+}
+
+.gauge-axis span:last-child {
+  position: absolute;
+  right: 0;
+}
+
+.gauge-threshold {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* --- envelope no fio --- */
+
+.wire-direction {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.wire-direction mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gauge-fill {
+    transition: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .chat-layout {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .evidence {
+    flex: none;
+    order: -1;
+    max-height: 40vh;
+  }
+
+  .chat-main {
+    min-height: 60vh;
+  }
+}
+
+@media (max-width: 600px) {
+  .ev-pair {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
 }

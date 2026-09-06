@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
-from app.api import auth, logs, session, users, websocket
+from app.api import adversary, auth, logs, session, users, websocket
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.core.event_logging import EVENT_SESSION_CLOSED, configure_logging, log_event
@@ -65,6 +65,7 @@ app.include_router(session.router)
 app.include_router(websocket.router)
 app.include_router(logs.router)
 app.include_router(users.router)
+app.include_router(adversary.router)
 
 
 @app.get("/health", tags=["infra"])
