@@ -16,8 +16,10 @@ COPY app ./app
 RUN pip install --no-cache-dir --target=/install ".[quantum]"
 
 FROM python:3.11-slim AS runtime
+# libssl-dev e ninja-build sao exigidos pelo cmake do liboqs; a imagem slim traz
+# apenas o runtime do OpenSSL, sem os headers.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential cmake git \
+        build-essential cmake git ninja-build libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -30,8 +32,14 @@ COPY --from=build /install /app/deps
 COPY app ./app
 
 # Pre-compila o liboqs na imagem para evitar a compilacao na primeira requisicao.
-RUN su qchat -c "python -c 'import oqs'" || true
+# Sem "|| true": uma falha aqui deixaria os modos ML-KEM e Hibrido quebrados em
+# tempo de execucao, silenciosamente.
+RUN su qchat -c "python -c 'import oqs'"
 RUN chown -R qchat:qchat /home/qchat
+
+# event_logging escreve em ./logs (relativo ao WORKDIR); /app pertence ao root,
+# entao o diretorio precisa existir e ser gravavel pelo usuario nao-root.
+RUN mkdir -p /app/logs && chown -R qchat:qchat /app/logs
 
 USER qchat
 EXPOSE 8000

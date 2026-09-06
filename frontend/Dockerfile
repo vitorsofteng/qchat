@@ -12,4 +12,4 @@ COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s \
-    CMD wget --quiet --spider http://localhost/ || exit 1
+    CMD wget --quiet --spider http://127.0.0.1/ || exit 1
