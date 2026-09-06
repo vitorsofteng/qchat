@@ -1,0 +1,93 @@
+.funnel {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  counter-reset: stage;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.stage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.stage-label {
+  font-weight: 500;
+}
+
+.stage-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bar-track {
+  flex: 1 1 auto;
+  height: 0.6rem;
+  border-radius: 0.3rem;
+  background: var(--qc-track);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.bar {
+  height: 100%;
+  border-radius: 0.3rem;
+  background: var(--mat-sys-primary);
+  opacity: 0.75;
+  transform-origin: left center;
+  animation: grow 0.5s ease-out both;
+}
+
+/* O ultimo estagio e' a chave que realmente cifra as mensagens. */
+.final .bar {
+  background: var(--qc-safe);
+  opacity: 1;
+}
+
+.final .stage-value {
+  color: var(--qc-safe);
+}
+
+.retained {
+  flex: none;
+  width: 2.6rem;
+  text-align: right;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.65;
+}
+
+.stage-note {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  opacity: 0.65;
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}

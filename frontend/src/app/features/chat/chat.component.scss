@@ -1,7 +1,7 @@
 .chat-page {
-  max-width: 760px;
+  max-width: 820px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1rem 1.25rem 1.25rem;
   display: flex;
   flex-direction: column;
   height: calc(100vh - 64px);
@@ -10,13 +10,93 @@
 
 /* Com o painel aberto a pagina alarga e abre uma coluna lateral. */
 .chat-page.with-evidence {
-  max-width: 1280px;
+  max-width: 1340px;
 }
+
+/* --------------------------------------------------------------- cabecalho */
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--qc-line);
+  margin-bottom: 0.85rem;
+}
+
+.session-id {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.mode-icon {
+  flex: none;
+  color: var(--mat-sys-primary);
+  font-size: 1.6rem;
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.session-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.mode-name {
+  font-weight: 600;
+  font-size: 1.02rem;
+}
+
+.session-state {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.session-state.alert {
+  color: var(--qc-danger);
+  opacity: 1;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.link-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-right: 0.25rem;
+}
+
+.link-state .dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--mat-sys-outline);
+}
+
+.link-state.online .dot {
+  background: var(--qc-safe);
+}
+
+/* ------------------------------------------------------------------ layout */
 
 .chat-layout {
   flex: 1 1 auto;
   display: flex;
-  gap: 1rem;
+  gap: 1.25rem;
   min-height: 0;
 }
 
@@ -28,57 +108,22 @@
   min-height: 0;
 }
 
-.chat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 0.75rem;
-}
-
-.metrics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.chip {
-  padding: 0.2rem 0.65rem;
-  border-radius: 1rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  background: var(--mat-sys-surface-container-high);
-}
-
-.chip-mode {
-  background: var(--mat-sys-primary-container);
-  color: var(--mat-sys-on-primary-container);
-}
-
-.chip-qber {
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
-}
-
-.status-connected {
-  background: #1b5e20;
-  color: #fff;
-}
-.status-connecting {
-  background: #e65100;
-  color: #fff;
-}
-.status-disconnected {
-  background: var(--mat-sys-error);
-  color: var(--mat-sys-on-error);
-}
+/* ---------------------------------------------------------------- mensagens */
 
 .establishing {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  opacity: 0.85;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--qc-line);
+  border-radius: var(--qc-radius);
+  background: var(--qc-panel);
+}
+
+.establishing p {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  opacity: 0.7;
 }
 
 .messages {
@@ -87,14 +132,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 0.5rem 0;
+  padding: 0.75rem 0;
 }
 
 .message {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  max-width: 75%;
+  max-width: 72%;
 }
 
 .message.outgoing {
@@ -103,71 +148,88 @@
 }
 
 .bubble {
-  padding: 0.55rem 0.85rem;
-  border-radius: 0.9rem;
-  background: var(--mat-sys-surface-container-high);
+  padding: 0.6rem 0.9rem;
+  border-radius: 1rem 1rem 1rem 0.25rem;
+  background: var(--qc-panel-raised);
+  border: 1px solid var(--qc-line);
   word-break: break-word;
+  line-height: 1.45;
 }
 
 .message.outgoing .bubble {
+  border-radius: 1rem 1rem 0.25rem;
   background: var(--mat-sys-primary);
+  border-color: var(--mat-sys-primary);
   color: var(--mat-sys-on-primary);
 }
 
 .bubble.typing {
   font-style: italic;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 .time {
-  font-size: 0.7rem;
-  opacity: 0.6;
-  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  opacity: 0.55;
+  margin-top: 0.2rem;
 }
 
-.hint,
-.closed-banner {
+.hint {
+  margin: auto;
+  max-width: 34ch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
   text-align: center;
-  opacity: 0.7;
-  margin: 1rem 0;
+  opacity: 0.6;
+}
+
+.hint mat-icon {
+  font-size: 1.6rem;
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.hint p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
 .closed-banner {
-  background: var(--mat-sys-surface-container-high);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--qc-panel);
+  border: 1px solid var(--qc-line);
+  border-radius: var(--qc-radius-sm);
+  padding: 0.7rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
 }
 
 .composer {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding-top: 0.5rem;
+  padding-top: 0.75rem;
 }
 
 .composer-field {
   flex: 1 1 auto;
 }
 
-/* ---------------------------------------------------------------------------
-   Painel de evidencias (F15.4) — expoe chave, metricas do protocolo, QBER e o
-   envelope cifrado que trafega no canal, sem exigir ferramentas do navegador.
-   --------------------------------------------------------------------------- */
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
+/* --------------------------------------------------- painel de evidencias */
 
 .evidence {
-  flex: 0 0 360px;
+  flex: 0 0 400px;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   overflow-y: auto;
-  padding-right: 0.25rem;
+  padding-right: 0.35rem;
   min-height: 0;
 }
 
@@ -175,43 +237,201 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 0.75rem;
-  background: var(--mat-sys-surface-container-low);
+  padding: 0.95rem 1.05rem 1.05rem;
+  border: 1px solid var(--qc-line);
+  border-radius: var(--qc-radius);
+  background: var(--qc-panel);
   min-width: 0;
+}
+
+/* Um unico cartao muda de tom quando ha espionagem detectada. */
+.ev-card.alarm {
+  border-color: var(--qc-danger);
+  background: var(--qc-danger-soft);
 }
 
 .ev-title {
   margin: 0;
   font-size: 0.9rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
 }
 
 .ev-caption {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.73rem;
+  line-height: 1.45;
   opacity: 0.7;
-  line-height: 1.4;
 }
 
 .ev-empty {
-  margin: 0.25rem 0 0;
+  margin: 0.2rem 0 0;
   font-size: 0.8rem;
   opacity: 0.6;
   font-style: italic;
 }
 
+.ev-footnote {
+  margin: 0.35rem 0 0;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  opacity: 0.62;
+}
+
+/* --------------------------------------------------------- cartao da chave */
+
+.key-card {
+  background: var(--qc-panel-raised);
+}
+
 .fingerprint {
-  margin: 0.25rem 0;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 1.15rem;
+  margin: 0.15rem 0 0.35rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color: var(--mat-sys-primary);
   word-break: break-word;
 }
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--qc-radius-sm);
+  background: var(--qc-panel);
+  border: 1px solid var(--qc-line);
+}
+
+.tile-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.tile-unit {
+  font-size: 0.68rem;
+  font-weight: 500;
+  opacity: 0.6;
+  margin-left: 0.15rem;
+}
+
+.tile-label {
+  font-size: 0.65rem;
+  opacity: 0.62;
+}
+
+.reveal {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  padding: 0.25rem 0;
+  font: inherit;
+  font-size: 0.73rem;
+  color: var(--mat-sys-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.reveal mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.raw-key {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  word-break: break-all;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--qc-radius-sm);
+  background: var(--qc-panel);
+  border: 1px solid var(--qc-line);
+}
+
+/* -------------------------------------------------------------- veredicto */
+
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.1rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--qc-safe);
+}
+
+.verdict.alarm {
+  color: var(--qc-danger);
+}
+
+.verdict mat-icon {
+  font-size: 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+/* ------------------------------------------------- componentes do hibrido */
+
+.components {
+  list-style: none;
+  margin: 0.3rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.component {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--qc-radius-sm);
+  background: var(--qc-safe-soft);
+}
+
+.component.failed {
+  background: var(--qc-danger-soft);
+}
+
+.component mat-icon {
+  flex: none;
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--qc-safe);
+}
+
+.component.failed mat-icon {
+  color: var(--qc-danger);
+}
+
+.component div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.component span {
+  opacity: 0.78;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+/* ------------------------------------------------------ pares rotulo/valor */
 
 .ev-pairs {
   display: flex;
@@ -222,12 +442,12 @@
 
 .ev-pair {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
   gap: 0.5rem;
   align-items: baseline;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   padding-bottom: 0.35rem;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  border-bottom: 1px solid var(--qc-line);
 }
 
 .ev-pair:last-child {
@@ -236,7 +456,7 @@
 }
 
 .ev-pair dt {
-  opacity: 0.7;
+  opacity: 0.68;
   min-width: 0;
 }
 
@@ -250,151 +470,23 @@
 .ev-note {
   display: block;
   font-weight: 400;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   opacity: 0.6;
-}
-
-.mono {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 0.75rem;
+  line-height: 1.35;
 }
 
 .wrap-any {
   word-break: break-all;
 }
 
-.plaintext {
-  font-style: italic;
-}
-
-.ev-footnote {
-  margin: 0.35rem 0 0;
-  font-size: 0.72rem;
-  opacity: 0.65;
-  line-height: 1.4;
-}
-
-/* --- componentes do modo hibrido --- */
-
-.components {
-  list-style: none;
-  margin: 0.5rem 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.component {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  font-size: 0.78rem;
-}
-
-.component mat-icon {
-  font-size: 1.1rem;
-  width: 1.1rem;
-  height: 1.1rem;
-  flex: none;
-  color: #2e7d32;
-}
-
-.component.failed mat-icon {
-  color: var(--mat-sys-error);
-}
-
-.component div {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.component span {
-  opacity: 0.7;
-  word-break: break-word;
-}
-
-/* --- medidor de QBER --- */
-
-.qber-value {
-  margin: 0.1rem 0 0.35rem;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 1.6rem;
-  font-weight: 600;
-  line-height: 1;
-  color: #2e7d32;
-}
-
-.qber-value.exceeded {
-  color: var(--mat-sys-error);
-}
-
-.gauge {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.gauge-track {
-  position: relative;
-  height: 0.85rem;
-  border-radius: 0.2rem;
-  background: var(--mat-sys-surface-container-highest);
-  border: 1px solid var(--mat-sys-outline-variant);
-}
-
-.gauge-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: 0.15rem 0 0 0.15rem;
-  background: #2e7d32;
-  transition: width 0.3s ease;
-}
-
-.gauge-fill.exceeded {
-  background: var(--mat-sys-error);
-}
-
-.gauge-marker {
-  position: absolute;
-  top: -0.2rem;
-  bottom: -0.2rem;
-  width: 2px;
-  background: var(--mat-sys-on-surface);
-}
-
-.gauge-axis {
-  position: relative;
-  height: 0.95rem;
-  font-size: 0.65rem;
-  opacity: 0.65;
-}
-
-.gauge-axis span:first-child {
-  position: absolute;
-  left: 0;
-}
-
-.gauge-axis span:last-child {
-  position: absolute;
-  right: 0;
-}
-
-.gauge-threshold {
-  position: absolute;
-  transform: translateX(-50%);
-  white-space: nowrap;
-}
-
-/* --- envelope no fio --- */
+/* ---------------------------------------------------- envelope no canal */
 
 .wire-direction {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  margin: 0.25rem 0 0;
-  font-size: 0.78rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
@@ -404,13 +496,64 @@
   height: 1rem;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .gauge-fill {
-    transition: none;
-  }
+/* Claro em cima, cifrado embaixo: a transformacao fica literal. */
+.transform {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
+  margin-top: 0.35rem;
 }
 
-@media (max-width: 900px) {
+.side {
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--qc-radius-sm);
+  background: var(--qc-panel-raised);
+  border: 1px solid var(--qc-line);
+  min-width: 0;
+}
+
+.wire-side {
+  background: var(--qc-panel);
+  border-style: dashed;
+}
+
+.side-label {
+  display: block;
+  font-family: var(--qc-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  margin-bottom: 0.2rem;
+}
+
+.plaintext {
+  margin: 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  word-break: break-word;
+}
+
+.cipher {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  word-break: break-all;
+  opacity: 0.85;
+}
+
+.arrow {
+  align-self: center;
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  opacity: 0.45;
+}
+
+/* ------------------------------------------------------------ responsivo */
+
+@media (max-width: 1080px) {
   .chat-layout {
     flex-direction: column;
     overflow-y: auto;
@@ -419,15 +562,19 @@
   .evidence {
     flex: none;
     order: -1;
-    max-height: 40vh;
+    max-height: 42vh;
   }
 
   .chat-main {
-    min-height: 60vh;
+    min-height: 55vh;
   }
 }
 
 @media (max-width: 600px) {
+  .chat-page {
+    padding: 0.75rem;
+  }
+
   .ev-pair {
     grid-template-columns: 1fr;
     gap: 0.1rem;

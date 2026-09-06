@@ -1,0 +1,47 @@
+<figure class="gauge" [class.exceeded]="exceeded()">
+  <svg viewBox="0 0 200 124" role="img" [attr.aria-label]="'QBER ' + display() + ' por cento'">
+    <!-- Trilho e zonas: tolerada ate o limiar, alarme depois dele. -->
+    <path class="track" [attr.d]="trackPath" [attr.stroke-width]="strokeWidth" fill="none" />
+    <path
+      class="zone zone-safe"
+      [attr.d]="safeZonePath()"
+      [attr.stroke-width]="strokeWidth"
+      fill="none"
+    />
+    <path
+      class="zone zone-danger"
+      [attr.d]="dangerZonePath()"
+      [attr.stroke-width]="strokeWidth"
+      fill="none"
+    />
+
+    @if (valuePath()) {
+      <path
+        class="value"
+        [attr.d]="valuePath()"
+        [attr.stroke-width]="strokeWidth"
+        fill="none"
+        stroke-linecap="round"
+      />
+    }
+
+    <!-- Marca do limiar. -->
+    <line
+      class="tick"
+      [attr.x1]="thresholdTick().x1"
+      [attr.y1]="thresholdTick().y1"
+      [attr.x2]="thresholdTick().x2"
+      [attr.y2]="thresholdTick().y2"
+    />
+
+    <text class="reading" x="100" y="92" text-anchor="middle">
+      {{ display() }}<tspan class="unit">%</tspan>
+    </text>
+  </svg>
+
+  <figcaption class="scale">
+    <span>0%</span>
+    <span class="limit">limiar {{ thresholdLabel() }}</span>
+    <span>{{ maxLabel() }}</span>
+  </figcaption>
+</figure>

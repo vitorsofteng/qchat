@@ -1,0 +1,77 @@
+.gauge {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.track {
+  stroke: var(--qc-track);
+}
+
+/* As zonas ficam tenues: informam a faixa sem competir com o valor medido. */
+.zone {
+  opacity: 0.35;
+}
+
+.zone-safe {
+  stroke: var(--qc-safe);
+}
+
+.zone-danger {
+  stroke: var(--qc-danger);
+}
+
+.value {
+  stroke: var(--qc-safe);
+  transition: stroke 0.25s ease;
+}
+
+.exceeded .value {
+  stroke: var(--qc-danger);
+}
+
+.tick {
+  stroke: var(--mat-sys-on-surface);
+  stroke-width: 2;
+  opacity: 0.55;
+}
+
+.reading {
+  font-family: var(--qc-mono);
+  font-size: 2.4rem;
+  font-weight: 600;
+  fill: var(--qc-safe);
+  dominant-baseline: auto;
+}
+
+.exceeded .reading {
+  fill: var(--qc-danger);
+}
+
+.unit {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.scale {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: var(--qc-mono);
+  font-size: 0.65rem;
+  opacity: 0.65;
+}
+
+.limit {
+  font-weight: 600;
+  opacity: 0.9;
+}

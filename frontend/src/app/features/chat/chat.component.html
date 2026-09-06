@@ -1,11 +1,26 @@
 <app-toolbar />
 
 <div class="chat-page" [class.with-evidence]="evidenceOpen()">
-  <div class="chat-header">
-    <div class="metrics">
-      <span class="chip chip-mode">{{ modeLabel() }}</span>
-      <span class="chip chip-qber">QBER: {{ qberDisplay() }}</span>
-      <span class="chip status-{{ connectionStatus() }}">
+  <header class="chat-header">
+    <div class="session-id">
+      <mat-icon class="mode-icon">{{ modeIcon() }}</mat-icon>
+      <div class="session-text">
+        <span class="mode-name">{{ modeLabel() }}</span>
+        <span class="session-state" [class.alert]="qberExceeded()">
+          @if (sessionClosed()) {
+            Sessão encerrada
+          } @else if (!ready()) {
+            Estabelecendo chave…
+          } @else {
+            Sessão segura ativa
+          }
+        </span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <span class="link-state" [class.online]="connectionStatus() === 'connected'">
+        <span class="dot" aria-hidden="true"></span>
         {{
           connectionStatus() === 'connected'
             ? 'Conectado'
@@ -14,24 +29,25 @@
               : 'Desconectado'
         }}
       </span>
-    </div>
-    <div class="header-actions">
       <button mat-stroked-button (click)="toggleEvidence()" [attr.aria-expanded]="evidenceOpen()">
         <mat-icon>{{ evidenceOpen() ? 'visibility_off' : 'science' }}</mat-icon>
         {{ evidenceOpen() ? 'Ocultar evidências' : 'Ver evidências' }}
       </button>
       <button mat-stroked-button (click)="closeSession()" [disabled]="sessionClosed()">
-        Encerrar sessão
+        Encerrar
       </button>
     </div>
-  </div>
+  </header>
 
   <div class="chat-layout">
     <div class="chat-main">
       @if (!ready() && !sessionClosed()) {
         <div class="establishing">
-          <mat-spinner diameter="36" />
-          <p>Estabelecendo chave segura ({{ modeLabel() }})…</p>
+          <mat-spinner diameter="32" />
+          <div>
+            <strong>Estabelecendo a chave em {{ modeShort() }}</strong>
+            <p>{{ modeDescription() }}</p>
+          </div>
         </div>
       }
 
@@ -43,7 +59,13 @@
           </div>
         } @empty {
           @if (ready()) {
-            <p class="hint">Sessão segura estabelecida. Envie a primeira mensagem.</p>
+            <div class="hint">
+              <mat-icon>lock</mat-icon>
+              <p>
+                Chave estabelecida. As mensagens são cifradas neste navegador — o servidor só
+                encaminha o resultado.
+              </p>
+            </div>
           }
         }
         @if (peerTyping()) {
@@ -55,7 +77,8 @@
 
       @if (sessionClosed()) {
         <div class="closed-banner">
-          Sessão encerrada. As mensagens são efêmeras e foram descartadas.
+          <mat-icon>lock_clock</mat-icon>
+          Sessão encerrada. As mensagens eram efêmeras e foram descartadas.
         </div>
       }
 
@@ -73,7 +96,6 @@
         </mat-form-field>
         <button
           mat-fab
-          color="primary"
           aria-label="Enviar"
           [disabled]="!ready() || sessionClosed()"
           (click)="send(messageInput)"
@@ -88,34 +110,93 @@
         <!-- Liga e desliga o espiao sem sair da tela; vale na proxima sessao. -->
         <app-adversary-control [compact]="true" />
 
-        <!-- Chave de sessao: a impressao digital e' a prova visual do acordo. -->
-        <article class="ev-card">
+        <!-- Chave: a impressao digital e' a prova visual do acordo entre as pontas. -->
+        <article class="ev-card key-card">
           <h2 class="ev-title">Chave de sessão</h2>
           @if (keyFingerprint(); as fingerprint) {
-            <p class="ev-caption">
-              Impressão digital SHA-256 — deve ser idêntica nas duas telas
-            </p>
-            <p class="fingerprint">{{ fingerprint }}</p>
-            <dl class="ev-pairs">
-              <div class="ev-pair">
-                <dt>Algoritmo</dt>
-                <dd>AES-256-GCM</dd>
+            <p class="ev-caption">Impressão digital SHA-256 — idêntica nas duas telas</p>
+            <p class="fingerprint qc-mono">{{ fingerprint }}</p>
+
+            @if (statTiles().length) {
+              <div class="tiles">
+                @for (tile of statTiles(); track tile.label) {
+                  <div class="tile">
+                    <span class="tile-value qc-mono">
+                      {{ tile.value }}<span class="tile-unit">{{ tile.unit }}</span>
+                    </span>
+                    <span class="tile-label">{{ tile.label }}</span>
+                  </div>
+                }
               </div>
-              <div class="ev-pair">
-                <dt>Chave (base64)</dt>
-                <dd class="wrap-any mono">{{ sessionKey() }}</dd>
-              </div>
-            </dl>
+            }
+
+            <button type="button" class="reveal" (click)="toggleKeyReveal()">
+              <mat-icon>{{ keyRevealed() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              {{ keyRevealed() ? 'Ocultar a chave' : 'Mostrar a chave em base64' }}
+            </button>
+            @if (keyRevealed()) {
+              <p class="raw-key qc-mono">{{ sessionKey() }}</p>
+            }
           } @else {
             <p class="ev-empty">Aguardando o estabelecimento da chave…</p>
           }
         </article>
 
-        <!-- Metricas do protocolo, comuns e especificas de cada modo. -->
-        <article class="ev-card">
-          <h2 class="ev-title">Protocolo · {{ modeLabel() }}</h2>
-          <p class="ev-caption">{{ modeDescription() }}</p>
-          @if (protocolRows().length) {
+        <!-- QBER: a evidencia fisica da espionagem, so' nos modos quanticos. -->
+        @if (hasQber()) {
+          <article class="ev-card" [class.alarm]="qberExceeded()">
+            <h2 class="ev-title">Taxa de erro quântico</h2>
+            <p class="ev-caption">
+              Medir um qubit o perturba. Acima de {{ thresholdDisplay() }} a perturbação denuncia
+              interceptação e a sessão é abortada.
+            </p>
+            @if (qber() !== null && qberThreshold() !== null) {
+              <app-qber-gauge [value]="qber()" [threshold]="qberThreshold() ?? 0.15" />
+              <p class="verdict" [class.alarm]="qberExceeded()">
+                <mat-icon>{{ qberExceeded() ? 'gpp_bad' : 'gpp_good' }}</mat-icon>
+                {{ qberExceeded() ? 'Espionagem detectada' : 'Canal íntegro' }}
+              </p>
+            } @else {
+              <p class="ev-empty">Ainda não medido.</p>
+            }
+          </article>
+        }
+
+        <!-- Funil: torna visivel o que a troca quantica de fato produz. -->
+        @if (funnelStages().length) {
+          <article class="ev-card">
+            <h2 class="ev-title">Destilação da chave</h2>
+            <p class="ev-caption">
+              De qubits transmitidos até a chave final, etapa por etapa.
+            </p>
+            <app-key-funnel [stages]="funnelStages()" />
+          </article>
+        }
+
+        <!-- Componentes do hibrido: onde a degradacao elegante fica visivel. -->
+        @if (hybridComponents().length) {
+          <article class="ev-card">
+            <h2 class="ev-title">Componentes do híbrido</h2>
+            <p class="ev-caption">
+              A chave sobrevive enquanto ao menos um componente permanecer íntegro.
+            </p>
+            <ul class="components">
+              @for (component of hybridComponents(); track component.name) {
+                <li class="component" [class.failed]="!component.ok">
+                  <mat-icon>{{ component.ok ? 'check_circle' : 'cancel' }}</mat-icon>
+                  <div>
+                    <strong>{{ component.name }}</strong>
+                    <span>{{ component.ok ? 'íntegro' : component.error }}</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          </article>
+        }
+
+        @if (protocolRows().length) {
+          <article class="ev-card">
+            <h2 class="ev-title">Detalhes do protocolo</h2>
             <dl class="ev-pairs">
               @for (row of protocolRows(); track row.label) {
                 <div class="ev-pair">
@@ -129,96 +210,47 @@
                 </div>
               }
             </dl>
-          } @else {
-            <p class="ev-empty">
-              As métricas chegam junto com a chave. Recarregar a página descarta as desta sessão.
-            </p>
-          }
-
-          @if (hybridComponents().length) {
-            <ul class="components">
-              @for (component of hybridComponents(); track component.name) {
-                <li class="component" [class.failed]="!component.ok">
-                  <mat-icon>{{ component.ok ? 'check_circle' : 'cancel' }}</mat-icon>
-                  <div>
-                    <strong>{{ component.name }}</strong>
-                    <span>{{ component.ok ? 'íntegro' : component.error }}</span>
-                  </div>
-                </li>
-              }
-            </ul>
-          }
-        </article>
-
-        <!-- QBER: so' os modos quanticos medem. -->
-        @if (hasQber()) {
-          <article class="ev-card">
-            <h2 class="ev-title">Taxa de erro quântico (QBER)</h2>
-            <p class="ev-caption">
-              Acima do limiar de {{ thresholdDisplay() }} a sessão é abortada por suspeita de
-              interceptação.
-            </p>
-            @if (qber() !== null) {
-              <p class="qber-value" [class.exceeded]="qberExceeded()">{{ qberDisplay() }}</p>
-              <div class="gauge">
-                <div class="gauge-track">
-                  <div
-                    class="gauge-fill"
-                    [class.exceeded]="qberExceeded()"
-                    [style.width.%]="qberBarWidth()"
-                  ></div>
-                  <div class="gauge-marker" [style.left.%]="qberMarkerLeft()"></div>
-                </div>
-                <div class="gauge-axis">
-                  <span>0%</span>
-                  <span class="gauge-threshold" [style.left.%]="qberMarkerLeft()">
-                    limiar {{ thresholdDisplay() }}
-                  </span>
-                  <span>{{ scaleMaxDisplay }}</span>
-                </div>
-              </div>
-            } @else {
-              <p class="ev-empty">Ainda não medido.</p>
-            }
           </article>
         }
 
         <!-- O envelope real que passou pelo servidor: dispensa o DevTools. -->
         <article class="ev-card">
           <h2 class="ev-title">O que trafega no canal</h2>
-          <p class="ev-caption">
-            Envelope da última mensagem, exatamente como o servidor o encaminhou.
-          </p>
           @if (wire(); as record) {
             <p class="wire-direction">
               <mat-icon>{{ record.outgoing ? 'north_east' : 'south_west' }}</mat-icon>
               {{ record.outgoing ? 'Enviada por você' : 'Recebida do interlocutor' }}
             </p>
+
+            <div class="transform">
+              <div class="side">
+                <span class="side-label">no seu navegador</span>
+                <p class="plaintext">{{ record.plaintext }}</p>
+              </div>
+              <mat-icon class="arrow">arrow_downward</mat-icon>
+              <div class="side wire-side">
+                <span class="side-label">no fio, passando pelo servidor</span>
+                <p class="cipher qc-mono">{{ record.envelope.ciphertext }}</p>
+              </div>
+            </div>
+
             <dl class="ev-pairs">
               <div class="ev-pair">
-                <dt>Texto em claro</dt>
-                <dd class="plaintext">{{ record.plaintext }}</dd>
+                <dt>Nonce</dt>
+                <dd class="wrap-any qc-mono">{{ record.envelope.nonce }}</dd>
               </div>
               <div class="ev-pair">
-                <dt>Nonce (96 bits)</dt>
-                <dd class="wrap-any mono">{{ record.envelope.nonce }}</dd>
+                <dt>Tag de autenticação</dt>
+                <dd class="wrap-any qc-mono">{{ record.envelope.tag }}</dd>
               </div>
               <div class="ev-pair">
-                <dt>Ciphertext</dt>
-                <dd class="wrap-any mono">{{ record.envelope.ciphertext }}</dd>
-              </div>
-              <div class="ev-pair">
-                <dt>Tag de autenticação (128 bits)</dt>
-                <dd class="wrap-any mono">{{ record.envelope.tag }}</dd>
-              </div>
-              <div class="ev-pair">
-                <dt>Número de sequência</dt>
-                <dd class="mono">{{ record.envelope.sequence_number }}</dd>
+                <dt>Sequência</dt>
+                <dd class="qc-mono">{{ record.envelope.sequence_number }}</dd>
               </div>
             </dl>
             <p class="ev-footnote">
-              O servidor encaminha estes três campos sem possuir a chave. O texto em claro acima
-              existe apenas neste navegador.
+              O servidor encaminha estes campos sem possuir a chave. O texto em claro existe
+              apenas neste navegador.
             </p>
           } @else {
             <p class="ev-empty">Envie uma mensagem para ver o envelope cifrado.</p>

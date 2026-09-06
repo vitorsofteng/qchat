@@ -1,53 +1,226 @@
 .lobby-page {
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  padding: 2rem 1.25rem 3rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
-.card mat-card-header {
-  align-items: center;
-}
+/* ------------------------------------------------------------------ abertura */
 
-.header-action {
-  margin-left: auto;
-}
-
-.mode-field {
-  width: 100%;
-}
-
-.mode-description {
-  margin: 0.25rem 0 0;
-  opacity: 0.75;
-  font-size: 0.9rem;
-}
-
-.row {
+.intro {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.intro h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.2vw, 2rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.intro-sub {
+  margin: 0;
+  max-width: 62ch;
+  opacity: 0.72;
+  line-height: 1.5;
+}
+
+/* -------------------------------------------------------------- cards de modo */
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 0.75rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
-.row:last-child {
-  border-bottom: none;
-}
-
-.row-name {
-  flex: 1 1 auto;
+.mode {
   display: flex;
   flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.9rem 1rem 1rem;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: var(--qc-panel-raised);
+  border: 1px solid var(--qc-line);
+  border-radius: var(--qc-radius);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
-.row-name small {
+.mode:hover {
+  border-color: var(--qc-line-strong);
+  transform: translateY(-1px);
+}
+
+/* O modo escolhido ganha a cor de destaque e um pouco de elevacao. */
+.mode.selected {
+  border-color: var(--mat-sys-primary);
+  box-shadow: 0 0 0 1px var(--mat-sys-primary);
+}
+
+.mode-top {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.mode-icon {
+  color: var(--mat-sys-primary);
+  font-size: 1.35rem;
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.mode-family {
+  font-family: var(--qc-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   opacity: 0.65;
+  line-height: 1.2;
+}
+
+.mode-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.mode-desc {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  opacity: 0.72;
+}
+
+.mode-traits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--qc-line);
+}
+
+.trait {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.trait mat-icon {
+  font-size: 0.95rem;
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+/* Uma propriedade que o modo possui e' afirmada; a que falta fica apagada. */
+.trait.yes {
+  opacity: 1;
+  color: var(--qc-safe);
+}
+
+/* --------------------------------------------------------------------- paineis */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.15rem 1.15rem;
+  background: var(--qc-panel);
+  border: 1px solid var(--qc-line);
+  border-radius: var(--qc-radius);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.panel-head h2 {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .empty {
-  opacity: 0.7;
   margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  opacity: 0.65;
+  max-width: 60ch;
+}
+
+.people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--qc-line);
+}
+
+.person:last-child {
+  border-bottom: none;
+}
+
+.avatar {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.invite-icon {
+  flex: none;
+  color: var(--mat-sys-primary);
+}
+
+.person-name {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.person-name small {
+  font-weight: 400;
+  opacity: 0.65;
+}
+
+@media (max-width: 560px) {
+  .person {
+    flex-wrap: wrap;
+  }
+
+  .person-name {
+    flex-basis: 60%;
+  }
 }
