@@ -24,7 +24,9 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://qchat:qchat@db:5432/qchat
       JWT_SECRET: dev-insecure-secret-change-me
-      CORS_ORIGINS: http://localhost:4200
+      # Ambas as origens locais: o environment.ts do frontend trata 127.0.0.1
+      # como desenvolvimento e aponta para o backend em localhost:8000.
+      CORS_ORIGINS: http://localhost:4200,http://127.0.0.1:4200
       ENVIRONMENT: development
       # Adversario simulado para a demonstracao do BB84. PASSIVE por padrao;
       # use EVE_MODE=INTERCEPT_RESEND docker compose up -d backend para ativar.
