@@ -104,12 +104,17 @@ export class LobbyComponent implements OnInit, OnDestroy {
         {
           sessionId: message.session_id as string,
           from: (message.payload['from'] as string) ?? 'desconhecido',
-          mode: (message.payload['mode'] as string) ?? '',
+          mode: this.modeShortLabel((message.payload['mode'] as string) ?? ''),
         },
       ]);
     } else if (message.type === 'session_accepted' && message.session_id) {
       void this.router.navigate(['/chat', message.session_id]);
     }
+  }
+
+  /** O payload traz o enum do backend ("MLKEM", "HYBRID"); a tela usa o nome. */
+  private modeShortLabel(mode: string): string {
+    return this.protocolModes.find((option) => option.value === mode)?.short ?? mode;
   }
 
   private removeRequest(sessionId: string): void {

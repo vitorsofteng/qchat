@@ -1,5 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 
+import { formatNumber, formatPercent } from '../format';
+
 /** Geometria do arco: semicirculo de 180 graus, desenhado em sentido horario. */
 const CX = 100;
 const CY = 100;
@@ -57,11 +59,11 @@ export class QberGaugeComponent {
 
   readonly display = computed(() => {
     const value = this.value();
-    return value === null ? '—' : `${(value * 100).toFixed(1)}`;
+    return value === null ? '—' : formatNumber(value * 100, 1);
   });
 
-  readonly thresholdLabel = computed(() => `${(this.threshold() * 100).toFixed(0)}%`);
-  readonly maxLabel = computed(() => `${(this.clampedMax() * 100).toFixed(0)}%`);
+  readonly thresholdLabel = computed(() => formatPercent(this.threshold(), 0));
+  readonly maxLabel = computed(() => formatPercent(this.clampedMax(), 0));
 
   // Trilho completo, zona tolerada, zona de alarme e arco do valor medido.
   readonly trackPath = arc(0, 1);

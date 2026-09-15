@@ -19,15 +19,16 @@ from app.crypto.eve_simulator import (
 
 router = APIRouter(prefix="/adversary", tags=["adversary"])
 
+# Textos exibidos na interface: ao contrario dos comentarios, levam acentuacao.
 _DESCRIPTIONS: dict[EveMode, str] = {
-    EveMode.PASSIVE: "Sem espionagem — canal integro.",
+    EveMode.PASSIVE: "Sem espionagem — canal íntegro.",
     EveMode.INTERCEPT_RESEND: (
-        "Eve mede cada qubit em base aleatoria e reenvia o resultado. Perturba o "
+        "Eve mede cada qubit em uma base aleatória e reenvia o resultado. Perturba o "
         "canal e eleva o QBER para cerca de 25%."
     ),
     EveMode.BEAM_SPLITTING: (
-        "Eve retem uma fracao dos qubits sem perturbar Bob: nao eleva o QBER, "
-        "mas vaza informacao."
+        "Eve desvia uma fração dos fótons sem perturbar os que chegam a Bob: não eleva "
+        "o QBER, mas vaza informação."
     ),
 }
 

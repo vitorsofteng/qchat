@@ -20,6 +20,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
+import { EveMode } from '../../core/models/adversary';
 import { ChatMessage } from '../../core/models/chat-message';
 import { PROTOCOL_MODES } from '../../core/models/protocol-mode';
 import { SessionView } from '../../core/models/session';
@@ -27,13 +28,17 @@ import { EncryptedEnvelope, WSMessage } from '../../core/models/ws-message';
 import { AdversaryService } from '../../core/services/adversary.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfigService } from '../../core/services/config.service';
-import { CryptoMetricsService } from '../../core/services/crypto-metrics.service';
+import { CryptoMetricsService, QberAlert } from '../../core/services/crypto-metrics.service';
 import { MessageCryptoService } from '../../core/services/message-crypto.service';
 import { SessionService } from '../../core/services/session.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { AdversaryControlComponent } from '../../shared/adversary-control/adversary-control.component';
+import { formatNumber, formatPercent } from '../../shared/format';
 import { FunnelStage, KeyFunnelComponent } from '../../shared/key-funnel/key-funnel.component';
-import { QberAlertDialogComponent } from '../../shared/qber-alert-dialog/qber-alert-dialog.component';
+import {
+  QberAlertDialogComponent,
+  QberAlertDialogData,
+} from '../../shared/qber-alert-dialog/qber-alert-dialog.component';
 import { QberGaugeComponent } from '../../shared/qber-gauge/qber-gauge.component';
 import { ToolbarComponent } from '../../shared/toolbar/toolbar.component';
 
@@ -103,6 +108,12 @@ export class ChatComponent implements OnInit, OnDestroy {
   readonly messages = signal<ChatMessage[]>([]);
   readonly ready = signal(false);
   readonly sessionClosed = signal(false);
+  /** Bob recusou o convite: nenhuma chave chegou a existir. */
+  readonly rejected = signal(false);
+  /** BB84 abortado por espionagem. */
+  readonly aborted = signal(false);
+  /** Hibrido sob espionagem: o BB84 caiu e a sessao segue apenas com o ML-KEM. */
+  readonly bb84Discarded = signal(false);
   readonly peerTyping = signal(false);
   readonly qber = signal<number | null>(null);
   readonly connectionStatus = this.ws.status;
@@ -115,6 +126,8 @@ export class ChatComponent implements OnInit, OnDestroy {
   readonly metrics = signal<Record<string, unknown> | null>(null);
   readonly wire = signal<WireRecord | null>(null);
   readonly qberThreshold = signal<number | null>(null);
+  /** Modo do adversario vigente quando a chave desta sessao foi estabelecida. */
+  readonly adversaryAtKey = signal<EveMode | null>(null);
 
   private readonly modeOption = computed(() => {
     const mode = this.session()?.mode;
@@ -129,7 +142,7 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   readonly qberDisplay = computed(() => {
     const value = this.qber();
-    return value === null ? 'N/A' : `${(value * 100).toFixed(1)}%`;
+    return value === null ? 'N/A' : formatPercent(value);
   });
 
   readonly qberExceeded = computed(() => {
@@ -140,8 +153,46 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   readonly thresholdDisplay = computed(() => {
     const threshold = this.qberThreshold();
-    return threshold === null ? '—' : `${(threshold * 100).toFixed(1)}%`;
+    return threshold === null ? '—' : formatPercent(threshold);
   });
+
+  /** Estado da sessao em uma linha, para o cabecalho. */
+  readonly sessionStateLabel = computed(() => {
+    if (this.rejected()) {
+      return 'Convite recusado';
+    }
+    if (this.aborted()) {
+      return 'Abortada — espionagem detectada';
+    }
+    if (this.sessionClosed()) {
+      return 'Sessão encerrada';
+    }
+    if (!this.ready()) {
+      return 'Estabelecendo chave…';
+    }
+    return this.bb84Discarded() ? 'Sessão ativa · BB84 descartado' : 'Sessão segura ativa';
+  });
+
+  /** Por que a sessao terminou, dito no rodape da conversa. */
+  readonly closedMessage = computed(() => {
+    if (this.rejected()) {
+      return 'O convite foi recusado. Nenhuma chave foi estabelecida.';
+    }
+    if (this.aborted()) {
+      return 'Sessão abortada: espionagem detectada no canal quântico. Nenhuma chave foi gerada.';
+    }
+    return 'Sessão encerrada. As mensagens eram efêmeras e foram descartadas.';
+  });
+
+  /** O QBER mede perturbacao, nao seguranca: o veredicto diz exatamente isso. */
+  readonly verdictLabel = computed(() =>
+    this.qberExceeded() ? 'Espionagem detectada' : 'Nenhuma perturbação detectada',
+  );
+
+  /** A divisao de feixe nao perturba os qubits, entao o QBER nao a denuncia. */
+  readonly beamSplittingUndetected = computed(
+    () => this.adversaryAtKey() === 'BEAM_SPLITTING' && !this.qberExceeded(),
+  );
 
   /** Os tres numeros que resumem o estabelecimento, em destaque. */
   readonly statTiles = computed<StatTile[]>(() => {
@@ -154,17 +205,17 @@ export class ChatComponent implements OnInit, OnDestroy {
     if (typeof elapsed === 'number') {
       tiles.push({
         label: 'Estabelecimento',
-        value: elapsed < 1000 ? elapsed.toFixed(0) : (elapsed / 1000).toFixed(2),
+        value: elapsed < 1000 ? formatNumber(elapsed) : formatNumber(elapsed / 1000, 2),
         unit: elapsed < 1000 ? 'ms' : 's',
       });
     }
     const bytes = metrics['bytes_exchanged'];
     if (typeof bytes === 'number' && bytes > 0) {
-      tiles.push({ label: 'Trocados', value: bytes.toLocaleString('pt-BR'), unit: 'bytes' });
+      tiles.push({ label: 'Trocados', value: formatNumber(bytes), unit: 'bytes' });
     }
     const bits = metrics['key_size_bits'];
     if (typeof bits === 'number') {
-      tiles.push({ label: 'Chave', value: String(bits), unit: 'bits' });
+      tiles.push({ label: 'Chave', value: formatNumber(bits), unit: 'bits' });
     }
     return tiles;
   });
@@ -264,12 +315,23 @@ export class ChatComponent implements OnInit, OnDestroy {
     if (!components || typeof components !== 'object') {
       return [];
     }
+    const qber = this.qber();
+    const threshold = this.qberThreshold();
     return Object.entries(components as Record<string, Record<string, unknown>>).map(
-      ([name, detail]) => ({
-        name: name === 'bb84' ? 'BB84 · quântico' : 'ML-KEM · pós-quântico',
-        ok: detail?.['ok'] === true,
-        error: (detail?.['error'] as string | null) ?? null,
-      }),
+      ([name, detail]) => {
+        const ok = detail?.['ok'] === true;
+        let error = (detail?.['error'] as string | null) ?? null;
+        // A mensagem crua do backend vem como "QBER 0.2635 acima do limiar
+        // 0.1500"; com os valores em maos, apresenta-se no formato da tela.
+        if (!ok && name === 'bb84' && qber !== null && threshold !== null) {
+          error = `QBER de ${formatPercent(qber)} acima do limiar de ${formatPercent(threshold)} — possível espionagem`;
+        }
+        return {
+          name: name === 'bb84' ? 'BB84 · quântico' : 'ML-KEM · pós-quântico',
+          ok,
+          error,
+        };
+      },
     );
   });
 
@@ -277,6 +339,9 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   private sessionId = '';
   private cryptoKey: CryptoKey | null = null;
+  /** Alerta que chegou antes de a sessao carregar: o desfecho depende do modo. */
+  private pendingAlert: QberAlert | null = null;
+  private alertHandled = false;
   private sendSequence = 0;
   private subscription?: Subscription;
   private typingTimeout?: ReturnType<typeof setTimeout>;
@@ -314,14 +379,30 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.sessions.get(this.sessionId).subscribe({
       next: (session) => {
         this.session.set(session);
-        this.qber.set(session.qber);
-        if (['closed', 'rejected', 'aborted'].includes(session.state)) {
+        if (session.qber !== null) {
+          this.qber.set(session.qber);
+        }
+        if (session.state === 'rejected') {
+          this.rejected.set(true);
+          this.sessionClosed.set(true);
+        } else if (session.state === 'aborted') {
+          // O backend so' aborta sessoes por espionagem (reason="eve_detected").
+          this.aborted.set(true);
+          this.sessionClosed.set(true);
+        } else if (session.state === 'closed') {
           this.sessionClosed.set(true);
         } else if (session.state === 'active') {
           // Sessao ja ativa (ex.: apos recarregar a pagina): recupera a chave.
           this.loadKey();
         }
         // pending/establishing: a chave chegara via WS (key_established).
+
+        // Alerta que chegou enquanto a tela carregava, ou ainda no lobby.
+        const alert = this.pendingAlert ?? this.cryptoMetrics.getQberAlert(this.sessionId);
+        this.pendingAlert = null;
+        if (alert) {
+          this.applyQberAlert(alert);
+        }
       },
       error: () => this.notify('Sessão não encontrada.'),
     });
@@ -390,9 +471,42 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.keyRevealed.update((revealed) => !revealed);
   }
 
+  backToLobby(): void {
+    void this.router.navigate(['/lobby']);
+  }
+
+  /** Registra o alerta de QBER e aplica o desfecho que o backend deu a sessao.
+   *
+   * BB84: sem canal quantico integro nao ha chave, entao a sessao e' abortada.
+   * Hibrido: o backend descarta o componente BB84 e deriva a chave do ML-KEM
+   * (ver `_build_qber_monitor` em key_exchange.py) — a sessao continua.
+   */
+  private applyQberAlert(alert: QberAlert): void {
+    const mode = this.session()?.mode;
+    if (!mode) {
+      this.pendingAlert = alert;
+      return;
+    }
+    this.qber.set(alert.qber);
+    if (this.alertHandled) {
+      return;
+    }
+    this.alertHandled = true;
+
+    const sessionContinues = mode === 'HYBRID';
+    if (sessionContinues) {
+      this.bb84Discarded.set(true);
+    } else {
+      this.aborted.set(true);
+      this.sessionClosed.set(true);
+    }
+    const data: QberAlertDialogData = { ...alert, sessionContinues };
+    this.dialog.open(QberAlertDialogComponent, { data });
+  }
+
   private async applyKey(keyBase64: string, qber: number | null): Promise<void> {
     this.cryptoKey = await this.messageCrypto.importKey(keyBase64);
-    this.adversary.refresh();
+    this.adversary.fetch().subscribe({ next: (state) => this.adversaryAtKey.set(state.mode) });
     this.sessionKey.set(keyBase64);
     this.keyFingerprint.set(await this.messageCrypto.fingerprint(keyBase64));
     this.ready.set(true);
@@ -402,11 +516,11 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   private formatBits(value: unknown): string | null {
-    return typeof value === 'number' ? `${value.toLocaleString('pt-BR')} bits` : null;
+    return typeof value === 'number' ? `${formatNumber(value)} bits` : null;
   }
 
   private formatCount(value: unknown): string | null {
-    return typeof value === 'number' ? value.toLocaleString('pt-BR') : null;
+    return typeof value === 'number' ? formatNumber(value) : null;
   }
 
   private formatSurvivors(value: unknown): string | null {
@@ -437,9 +551,11 @@ export class ChatComponent implements OnInit, OnDestroy {
         void this.receive(message.payload as unknown as EncryptedEnvelope);
         break;
       case 'qber_alert':
-        this.qber.set((message.payload['qber'] as number | null) ?? this.qber());
+        this.applyQberAlert(message.payload as unknown as QberAlert);
+        break;
+      case 'session_rejected':
+        this.rejected.set(true);
         this.sessionClosed.set(true);
-        this.dialog.open(QberAlertDialogComponent, { data: message.payload });
         break;
       case 'session_closed':
         this.sessionClosed.set(true);

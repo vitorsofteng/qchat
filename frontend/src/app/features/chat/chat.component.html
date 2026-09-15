@@ -6,14 +6,8 @@
       <mat-icon class="mode-icon">{{ modeIcon() }}</mat-icon>
       <div class="session-text">
         <span class="mode-name">{{ modeLabel() }}</span>
-        <span class="session-state" [class.alert]="qberExceeded()">
-          @if (sessionClosed()) {
-            Sessão encerrada
-          } @else if (!ready()) {
-            Estabelecendo chave…
-          } @else {
-            Sessão segura ativa
-          }
+        <span class="session-state" [class.alert]="aborted() || bb84Discarded()">
+          {{ sessionStateLabel() }}
         </span>
       </div>
     </div>
@@ -76,9 +70,10 @@
       </div>
 
       @if (sessionClosed()) {
-        <div class="closed-banner">
-          <mat-icon>lock_clock</mat-icon>
-          Sessão encerrada. As mensagens eram efêmeras e foram descartadas.
+        <div class="closed-banner" [class.alarm]="aborted()">
+          <mat-icon>{{ rejected() ? 'block' : aborted() ? 'gpp_bad' : 'lock_clock' }}</mat-icon>
+          <span class="closed-text">{{ closedMessage() }}</span>
+          <button mat-flat-button (click)="backToLobby()">Voltar ao lobby</button>
         </div>
       }
 
@@ -154,8 +149,18 @@
               <app-qber-gauge [value]="qber()" [threshold]="qberThreshold() ?? 0.15" />
               <p class="verdict" [class.alarm]="qberExceeded()">
                 <mat-icon>{{ qberExceeded() ? 'gpp_bad' : 'gpp_good' }}</mat-icon>
-                {{ qberExceeded() ? 'Espionagem detectada' : 'Canal íntegro' }}
+                {{ verdictLabel() }}
               </p>
+              @if (beamSplittingUndetected()) {
+                <p class="caveat">
+                  <mat-icon>visibility_off</mat-icon>
+                  <span>
+                    Havia um espião por divisão de feixe. Ele desvia fótons sem perturbar os que
+                    chegam a Bob, então o QBER não o denuncia — é a amplificação de privacidade que
+                    descarta a informação que ele obteve.
+                  </span>
+                </p>
+              }
             } @else {
               <p class="ev-empty">Ainda não medido.</p>
             }
