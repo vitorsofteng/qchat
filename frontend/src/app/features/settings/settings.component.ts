@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { PROTOCOL_MODES } from '../../core/models/protocol-mode';
 import { SystemConfig } from '../../core/models/system-config';
 import { ConfigService } from '../../core/services/config.service';
+import { formatNumber, formatPercent } from '../../shared/format';
 import { ToolbarComponent } from '../../shared/toolbar/toolbar.component';
 
 /** Tela de configuracoes — parametros do sistema em modo leitura (F14.7). */
@@ -19,6 +20,8 @@ export class SettingsComponent implements OnInit {
 
   readonly config = signal<SystemConfig | null>(null);
   readonly protocolModes = PROTOCOL_MODES;
+  readonly percent = formatPercent;
+  readonly count = (value: number): string => formatNumber(value);
 
   ngOnInit(): void {
     this.configService.get().subscribe({ next: (config) => this.config.set(config) });

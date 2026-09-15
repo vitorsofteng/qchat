@@ -10,11 +10,11 @@
       @if (config(); as cfg) {
         <div class="param">
           <span class="param-label">Qubits do BB84</span>
-          <span class="param-value">{{ cfg.bb84_qubits }}</span>
+          <span class="param-value">{{ count(cfg.bb84_qubits) }}</span>
         </div>
         <div class="param">
           <span class="param-label">Limiar de QBER</span>
-          <span class="param-value">{{ (cfg.qber_threshold * 100).toFixed(1) }}%</span>
+          <span class="param-value">{{ percent(cfg.qber_threshold) }}</span>
         </div>
         <div class="param">
           <span class="param-label">Passes do Cascade</span>

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { AdversaryState, EveMode } from '../models/adversary';
@@ -18,9 +18,12 @@ export class AdversaryService {
   readonly state = signal<AdversaryState | null>(null);
 
   refresh(): void {
-    this.http
-      .get<AdversaryState>(this.api)
-      .subscribe({ next: (state) => this.state.set(state) });
+    this.fetch().subscribe();
+  }
+
+  /** Busca o estado atual, atualiza o signal compartilhado e o repassa. */
+  fetch(): Observable<AdversaryState> {
+    return this.http.get<AdversaryState>(this.api).pipe(tap((state) => this.state.set(state)));
   }
 
   setMode(mode: EveMode) {
