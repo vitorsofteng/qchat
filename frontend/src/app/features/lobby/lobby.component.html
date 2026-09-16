@@ -1,66 +1,96 @@
 <app-toolbar />
 
 <div class="lobby-page">
-  <mat-card appearance="outlined" class="card">
-    <mat-card-header>
-      <mat-card-title>Nova sessão</mat-card-title>
-      <mat-card-subtitle>Escolha o modo de estabelecimento de chave</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <mat-form-field appearance="outline" class="mode-field">
-        <mat-label>Modo criptográfico</mat-label>
-        <mat-select [value]="selectedMode()" (valueChange)="selectedMode.set($event)">
-          @for (mode of protocolModes; track mode.value) {
-            <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <p class="mode-description">{{ modeDescription() }}</p>
-    </mat-card-content>
-  </mat-card>
+  <header class="intro">
+    <p class="qc-eyebrow">Nova sessão</p>
+    <h1>Escolha como a chave será estabelecida</h1>
+    <p class="intro-sub">
+      Os quatro modos produzem a mesma chave AES-256-GCM. O que muda é como as duas pontas
+      chegaram a ela — e o que cada um consegue perceber sobre o canal.
+    </p>
+  </header>
 
-  <mat-card appearance="outlined" class="card">
-    <mat-card-header>
-      <mat-card-title>Usuários online</mat-card-title>
-      <button mat-icon-button class="header-action" (click)="refreshUsers()" aria-label="Atualizar">
+  <!-- Os quatro modos lado a lado: ver as opcoes juntas ja e' explicativo. -->
+  <div class="modes" role="radiogroup" aria-label="Modo de estabelecimento de chave">
+    @for (mode of protocolModes; track mode.value) {
+      <button
+        type="button"
+        role="radio"
+        class="mode"
+        [class.selected]="selectedMode() === mode.value"
+        [attr.aria-checked]="selectedMode() === mode.value"
+        (click)="selectedMode.set(mode.value)"
+      >
+        <span class="mode-top">
+          <mat-icon class="mode-icon">{{ mode.icon }}</mat-icon>
+          <span class="mode-family">{{ mode.family }}</span>
+        </span>
+        <span class="mode-name">{{ mode.short }}</span>
+        <span class="mode-desc">{{ mode.description }}</span>
+        <span class="mode-traits">
+          <span class="trait" [class.yes]="mode.detectsEavesdropping">
+            <mat-icon>{{ mode.detectsEavesdropping ? 'visibility' : 'visibility_off' }}</mat-icon>
+            {{ mode.detectsEavesdropping ? 'detecta espião' : 'não detecta espião' }}
+          </span>
+          <span class="trait" [class.yes]="mode.quantumResistant">
+            <mat-icon>{{ mode.quantumResistant ? 'verified_user' : 'gpp_maybe' }}</mat-icon>
+            {{ mode.quantumResistant ? 'resiste a Shor' : 'vulnerável a Shor' }}
+          </span>
+        </span>
+      </button>
+    }
+  </div>
+
+  <app-adversary-control />
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Usuários online</h2>
+      <button mat-icon-button (click)="refreshUsers()" aria-label="Atualizar lista">
         <mat-icon>refresh</mat-icon>
       </button>
-    </mat-card-header>
-    <mat-card-content>
-      @if (onlineUsers().length === 0) {
-        <p class="empty">Nenhum outro usuário online no momento.</p>
-      } @else {
+    </div>
+
+    @if (onlineUsers().length === 0) {
+      <p class="empty">
+        Ninguém mais está conectado. A lista mostra apenas quem tem uma sessão aberta no
+        navegador — abra o QChat em uma janela anônima para conversar consigo mesmo.
+      </p>
+    } @else {
+      <ul class="people">
         @for (user of onlineUsers(); track user.id) {
-          <div class="row">
-            <mat-icon>person</mat-icon>
-            <span class="row-name">{{ user.username }}</span>
-            <button mat-stroked-button (click)="startSession(user)">Conversar</button>
-          </div>
+          <li class="person">
+            <span class="avatar" aria-hidden="true">{{
+              user.username.charAt(0).toUpperCase()
+            }}</span>
+            <span class="person-name">{{ user.username }}</span>
+            <button mat-flat-button (click)="startSession(user)">
+              Conversar em {{ selectedModeShort() }}
+            </button>
+          </li>
         }
-      }
-    </mat-card-content>
-  </mat-card>
+      </ul>
+    }
+  </section>
 
   @if (pendingRequests().length > 0) {
-    <mat-card appearance="outlined" class="card">
-      <mat-card-header>
-        <mat-card-title>Solicitações recebidas</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Convites recebidos</h2>
+      </div>
+      <ul class="people">
         @for (request of pendingRequests(); track request.sessionId) {
-          <div class="row">
-            <mat-icon>mark_email_unread</mat-icon>
-            <span class="row-name">
+          <li class="person">
+            <mat-icon class="invite-icon">mark_email_unread</mat-icon>
+            <span class="person-name">
               {{ request.from }}
-              <small>modo {{ request.mode }}</small>
+              <small>quer conversar em {{ request.mode }}</small>
             </span>
-            <button mat-flat-button color="primary" (click)="acceptRequest(request)">
-              Aceitar
-            </button>
+            <button mat-flat-button (click)="acceptRequest(request)">Aceitar</button>
             <button mat-button (click)="rejectRequest(request)">Recusar</button>
-          </div>
+          </li>
         }
-      </mat-card-content>
-    </mat-card>
+      </ul>
+    </section>
   }
 </div>

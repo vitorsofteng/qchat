@@ -1,11 +1,56 @@
 """Configuracao da aplicacao carregada de variaveis de ambiente / .env."""
 
 from functools import lru_cache
+from typing import Any
 
 from pydantic import field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic.fields import FieldInfo
+from pydantic_settings import (
+    BaseSettings,
+    DotEnvSettingsSource,
+    EnvSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
 _DEFAULT_JWT_SECRET = "dev-insecure-secret-change-me"
+
+# Campos de lista aceitos no formato separado por virgula (ver .env.example).
+_COMMA_SEPARATED_FIELDS = frozenset({"cors_origins"})
+
+
+class _CommaSeparatedMixin:
+    """Evita que o pydantic-settings decodifique estes campos como JSON.
+
+    Para campos complexos (list[str]), o pydantic-settings roda json.loads no
+    valor bruto da variavel de ambiente ANTES dos field_validator. Sem isto,
+    CORS_ORIGINS=http://localhost:4200 aborta a inicializacao com
+    JSONDecodeError em vez de chegar em _split_origins.
+    """
+
+    def prepare_field_value(
+        self,
+        field_name: str,
+        field: FieldInfo,
+        value: Any,
+        value_is_complex: bool,
+    ) -> Any:
+        # Uma lista JSON explicita continua valida: delega ao pydantic.
+        if (
+            field_name in _COMMA_SEPARATED_FIELDS
+            and isinstance(value, str)
+            and not value.lstrip().startswith("[")
+        ):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return super().prepare_field_value(field_name, field, value, value_is_complex)
+
+
+class _EnvSource(_CommaSeparatedMixin, EnvSettingsSource):
+    pass
+
+
+class _DotEnvSource(_CommaSeparatedMixin, DotEnvSettingsSource):
+    pass
 
 
 class Settings(BaseSettings):
@@ -50,6 +95,22 @@ class Settings(BaseSettings):
 
     # WebSocket
     ws_heartbeat_seconds: int = 30
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            _EnvSource(settings_cls),
+            _DotEnvSource(settings_cls),
+            file_secret_settings,
+        )
 
     @field_validator("cors_origins", mode="before")
     @classmethod
