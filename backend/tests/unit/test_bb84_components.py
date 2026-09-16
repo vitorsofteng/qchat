@@ -142,3 +142,50 @@ def test_eve_simulator_rejects_invalid_fraction():
 def test_eve_uses_register_only_for_intercept_resend():
     assert EveSimulator(EveMode.INTERCEPT_RESEND).uses_eve_register is True
     assert EveSimulator(EveMode.PASSIVE).uses_eve_register is False
+
+
+def test_adversary_mode_can_be_switched_at_runtime():
+    """A demonstracao troca o adversario sem reiniciar o backend."""
+    from app.crypto.eve_simulator import (
+        configured_eve,
+        current_adversary_mode,
+        reset_adversary_mode,
+        set_adversary_mode,
+    )
+
+    try:
+        set_adversary_mode(EveMode.INTERCEPT_RESEND)
+        assert current_adversary_mode() == EveMode.INTERCEPT_RESEND
+        assert configured_eve().mode == EveMode.INTERCEPT_RESEND
+
+        set_adversary_mode(EveMode.PASSIVE)
+        assert configured_eve().mode == EveMode.PASSIVE
+    finally:
+        reset_adversary_mode()
+
+
+def test_adversary_is_locked_in_production(monkeypatch):
+    """Em producao Eve permanece PASSIVE e a troca e' recusada (F11.4)."""
+    import pytest
+
+    from app.core.config import get_settings
+    from app.crypto.eve_simulator import (
+        adversary_locked,
+        configured_eve,
+        current_adversary_mode,
+        reset_adversary_mode,
+        set_adversary_mode,
+    )
+
+    get_settings.cache_clear()
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("JWT_SECRET", "x" * 40)
+    try:
+        assert adversary_locked() is True
+        with pytest.raises(PermissionError):
+            set_adversary_mode(EveMode.INTERCEPT_RESEND)
+        assert current_adversary_mode() == EveMode.PASSIVE
+        assert configured_eve().mode == EveMode.PASSIVE
+    finally:
+        reset_adversary_mode()
+        get_settings.cache_clear()

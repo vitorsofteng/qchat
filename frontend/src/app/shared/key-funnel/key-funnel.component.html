@@ -1,0 +1,25 @@
+<ol class="funnel">
+  @for (stage of rendered(); track stage.label; let index = $index) {
+    <li class="stage" [class.final]="stage.final">
+      <div class="stage-head">
+        <span class="stage-label">{{ stage.label }}</span>
+        <span class="stage-value qc-mono">{{ format(stage.value) }}</span>
+      </div>
+      <div class="bar-row">
+        <div class="bar-track">
+          <div
+            class="bar"
+            [style.width.%]="stage.widthPercent"
+            [style.animation-delay.ms]="index * 90"
+          ></div>
+        </div>
+        <!-- A coluna existe em todas as linhas para que os trilhos tenham a
+             mesma largura e as barras fiquem visualmente comparaveis. -->
+        <span class="retained qc-mono" title="proporção que sobreviveu do estágio anterior">
+          {{ stage.retained ?? '—' }}
+        </span>
+      </div>
+      <p class="stage-note">{{ stage.note }}</p>
+    </li>
+  }
+</ol>

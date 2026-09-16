@@ -1,0 +1,34 @@
+@if (state(); as adversary) {
+  <div class="adversary" [class.compact]="compact()" [class.armed]="active()">
+    <div class="adversary-head">
+      <mat-icon class="head-icon">{{ active() ? 'radar' : 'shield' }}</mat-icon>
+      <div class="head-text">
+        <strong>Adversário simulado</strong>
+        <span class="state-line">{{ active() ? 'Espião ativo' : 'Canal íntegro' }}</span>
+      </div>
+    </div>
+
+    @if (adversary.locked) {
+      <p class="locked">
+        Bloqueado em produção — o adversário simulado nunca compõe o sistema em operação real.
+      </p>
+    } @else {
+      <div class="options" role="group" aria-label="Modo do adversário simulado">
+        @for (option of adversary.options; track option.mode) {
+          <button
+            type="button"
+            class="option"
+            [class.selected]="adversary.mode === option.mode"
+            [disabled]="busy()"
+            [attr.aria-pressed]="adversary.mode === option.mode"
+            (click)="select(option.mode)"
+          >
+            {{ labels[option.mode] }}
+          </button>
+        }
+      </div>
+      <p class="description">{{ adversary.description }}</p>
+      <p class="hint">Vale a partir da próxima sessão, e afeta apenas BB84 e Híbrido.</p>
+    }
+  </div>
+}

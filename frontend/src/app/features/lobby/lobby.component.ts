@@ -1,9 +1,6 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -16,6 +13,7 @@ import { CryptoMetricsService } from '../../core/services/crypto-metrics.service
 import { SessionService } from '../../core/services/session.service';
 import { UserService } from '../../core/services/user.service';
 import { WebSocketService } from '../../core/services/websocket.service';
+import { AdversaryControlComponent } from '../../shared/adversary-control/adversary-control.component';
 import { ToolbarComponent } from '../../shared/toolbar/toolbar.component';
 
 interface PendingRequest {
@@ -27,14 +25,7 @@ interface PendingRequest {
 /** Tela de lobby — usuarios online e solicitacoes de sessao (F14.3). */
 @Component({
   selector: 'app-lobby',
-  imports: [
-    ToolbarComponent,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatSelectModule,
-  ],
+  imports: [ToolbarComponent, AdversaryControlComponent, MatButtonModule, MatIconModule],
   templateUrl: './lobby.component.html',
   styleUrl: './lobby.component.scss',
 })
@@ -79,9 +70,11 @@ export class LobbyComponent implements OnInit, OnDestroy {
     });
   }
 
-  modeDescription(): string {
-    return this.protocolModes.find((option) => option.value === this.selectedMode())?.description ?? '';
-  }
+  readonly selectedModeShort = computed(
+    () =>
+      this.protocolModes.find((option) => option.value === this.selectedMode())?.short ??
+      this.selectedMode(),
+  );
 
   startSession(user: UserProfile): void {
     this.sessions.request(user.username, this.selectedMode()).subscribe({
@@ -111,12 +104,17 @@ export class LobbyComponent implements OnInit, OnDestroy {
         {
           sessionId: message.session_id as string,
           from: (message.payload['from'] as string) ?? 'desconhecido',
-          mode: (message.payload['mode'] as string) ?? '',
+          mode: this.modeShortLabel((message.payload['mode'] as string) ?? ''),
         },
       ]);
     } else if (message.type === 'session_accepted' && message.session_id) {
       void this.router.navigate(['/chat', message.session_id]);
     }
+  }
+
+  /** O payload traz o enum do backend ("MLKEM", "HYBRID"); a tela usa o nome. */
+  private modeShortLabel(mode: string): string {
+    return this.protocolModes.find((option) => option.value === mode)?.short ?? mode;
   }
 
   private removeRequest(sessionId: string): void {
