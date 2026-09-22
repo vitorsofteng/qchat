@@ -18,7 +18,12 @@ function polar(angleDeg: number): { x: number; y: number } {
 function arc(fromFraction: number, toFraction: number): string {
   const start = polar(180 - 180 * fromFraction);
   const end = polar(180 - 180 * toFraction);
-  const large = toFraction - fromFraction > 0.5 ? 1 : 0;
+  // O large-arc-flag do SVG vale 1 so para arcos acima de 180 graus. Como o
+  // medidor inteiro e um semicirculo, a fracao 0,5 corresponde a 90 graus, e
+  // compara-la com 0,5 forcava o "arco grande": para atende-lo com o mesmo
+  // raio, o SVG desenhava o arco em outro centro, fora do trilho. O defeito
+  // aparecia justamente acima do limiar (15% numa escala de 30%).
+  const large = 180 * (toFraction - fromFraction) > 180 ? 1 : 0;
   return `M ${start.x} ${start.y} A ${R} ${R} 0 ${large} 1 ${end.x} ${end.y}`;
 }
 
